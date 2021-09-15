@@ -1,10 +1,11 @@
 // Copyright (c) 2009-2017 The Bitcoin Core developers
 // Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef PIVX_POLICY_FEERATE_H
-#define PIVX_POLICY_FEERATE_H
+#ifndef Posante_POLICY_FEERATE_H
+#define Posante_POLICY_FEERATE_H
 
 #include "amount.h"
 #include "serialize.h"
@@ -14,7 +15,7 @@
 extern const std::string CURRENCY_UNIT;
 
 /**
- * Fee rate in PIV per kilobyte: CAmount / kB
+ * Fee rate in POSA per kilobyte: CAmount / kB
  */
 class CFeeRate
 {
@@ -33,7 +34,11 @@ public:
     friend bool operator==(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK == b.nSatoshisPerK; }
     friend bool operator<=(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK <= b.nSatoshisPerK; }
     friend bool operator>=(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK >= b.nSatoshisPerK; }
-    CFeeRate& operator+=(const CFeeRate& a) { nSatoshisPerK += a.nSatoshisPerK; return *this; }
+    CFeeRate& operator+=(const CFeeRate& a)
+    {
+        nSatoshisPerK += a.nSatoshisPerK;
+        return *this;
+    }
     std::string ToString() const;
 
     ADD_SERIALIZE_METHODS;
@@ -45,4 +50,4 @@ public:
     }
 };
 
-#endif //  PIVX_POLICY_FEERATE_H
+#endif //  Posante_POLICY_FEERATE_H

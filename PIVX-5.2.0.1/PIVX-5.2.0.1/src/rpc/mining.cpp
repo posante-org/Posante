@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -42,9 +43,8 @@ UniValue generate(const JSONRPCRequest& request)
             "[ blockhashes ]     (array) hashes of blocks generated\n"
 
             "\nExamples:\n"
-            "\nGenerate 11 blocks\n"
-            + HelpExampleCli("generate", "11")
-        );
+            "\nGenerate 11 blocks\n" +
+            HelpExampleCli("generate", "11"));
 
     if (!Params().IsRegTestNet())
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "This method can only be used on regtest");
@@ -53,7 +53,7 @@ UniValue generate(const JSONRPCRequest& request)
     int nHeightEnd = 0;
     int nHeight = 0;
 
-    {   // Don't keep cs_main locked
+    { // Don't keep cs_main locked
         LOCK(cs_main);
         nHeight = chainActive.Height();
         nHeightEnd = nHeight + nGenerate;
@@ -75,7 +75,6 @@ UniValue generate(const JSONRPCRequest& request)
     unsigned int nExtraNonce = 0;
 
     while (nHeight < nHeightEnd && !ShutdownRequested()) {
-
         // Get available coins
         std::vector<CStakeableOutput> availableCoins;
         if (fPoS && !pwalletMain->StakeableCoins(&availableCoins)) {
@@ -83,12 +82,12 @@ UniValue generate(const JSONRPCRequest& request)
         }
 
         std::unique_ptr<CBlockTemplate> pblocktemplate((fPoS ?
-                                                        BlockAssembler(Params(), DEFAULT_PRINTPRIORITY).CreateNewBlock(CScript(), pwalletMain, true, &availableCoins) :
-                                                        CreateNewBlockWithKey(reservekey.get(), pwalletMain)));
+                                                            BlockAssembler(Params(), DEFAULT_PRINTPRIORITY).CreateNewBlock(CScript(), pwalletMain, true, &availableCoins) :
+                                                            CreateNewBlockWithKey(reservekey.get(), pwalletMain)));
         if (!pblocktemplate.get()) break;
         std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>(pblocktemplate->block);
 
-        if(!fPoS) {
+        if (!fPoS) {
             {
                 LOCK(cs_main);
                 IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
@@ -135,7 +134,7 @@ UniValue generate(const JSONRPCRequest& request)
  */
 UniValue GetNetworkHashPS(int lookup, int height)
 {
-    CBlockIndex *pb = chainActive.Tip();
+    CBlockIndex* pb = chainActive.Tip();
 
     if (height >= 0 && height < chainActive.Height())
         pb = chainActive[height];
@@ -200,7 +199,7 @@ UniValue getgenerate(const JSONRPCRequest& request)
         throw std::runtime_error(
             "getgenerate\n"
             "\nReturn if the server is set to generate coins or not. The default is false.\n"
-            "It is set with the command line argument -gen (or pivx.conf setting gen)\n"
+            "It is set with the command line argument -gen (or posante.conf setting gen)\n"
             "It can also be set with the setgenerate call.\n"
 
             "\nResult\n"
@@ -340,8 +339,8 @@ UniValue prioritisetransaction(const JSONRPCRequest& request)
             "1. \"txid\"       (string, required) The transaction id.\n"
             "2. priority_delta (numeric, required) The priority to add or subtract.\n"
             "                  The transaction selection algorithm considers the tx as it would have a higher priority.\n"
-            "                  (priority of a transaction is calculated: coinage * value_in_upiv / txsize) \n"
-            "3. fee_delta      (numeric, required) The fee value (in upiv) to add (or subtract, if negative).\n"
+            "                  (priority of a transaction is calculated: coinage * value_in_uposa / txsize) \n"
+            "3. fee_delta      (numeric, required) The fee value (in uposa) to add (or subtract, if negative).\n"
             "                  The fee is not actually paid, only the algorithm for selecting transactions into a block\n"
             "                  considers the transaction as it would have paid a higher (or lower) fee.\n"
 
@@ -411,7 +410,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
             "             n                        (numeric) transactions before this one (by 1-based index in 'transactions' list) that must be present in the final block if this one is\n"
             "             ,...\n"
             "         ],\n"
-            "         \"fee\": n,                   (numeric) difference in value between transaction inputs and outputs (in upiv); for coinbase transactions, this is a negative Number of the total collected block fees (ie, not including the block subsidy); if key is not present, fee is unknown and clients MUST NOT assume there isn't one\n"
+            "         \"fee\": n,                   (numeric) difference in value between transaction inputs and outputs (in uposa); for coinbase transactions, this is a negative Number of the total collected block fees (ie, not including the block subsidy); if key is not present, fee is unknown and clients MUST NOT assume there isn't one\n"
             "         \"sigops\" : n,               (numeric) total number of SigOps, as counted for purposes of block limits; if key is not present, sigop count is unknown and clients MUST NOT assume there aren't any\n"
             "         \"required\" : true|false     (boolean) if provided and true, this transaction must be in the final block\n"
             "      }\n"
@@ -420,7 +419,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
             "  \"coinbaseaux\" : {                  (json object) data that should be included in the coinbase's scriptSig content\n"
             "      \"flags\" : \"flags\"            (string) \n"
             "  },\n"
-            "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in upiv)\n"
+            "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in uposa)\n"
             "  \"coinbasetxn\" : { ... },           (json object) information for coinbase transaction\n"
             "  \"target\" : \"xxxx\",               (string) The hash target\n"
             "  \"mintime\" : xxx,                   (numeric) The minimum timestamp appropriate for next block time in seconds since epoch (Jan 1 1970 GMT)\n"
@@ -440,7 +439,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
             "        { ... }                       (json object) vote candidate\n"
             "        ,...\n"
             "  ],\n"
-            "  \"enforce_masternode_payments\" : true|false  (boolean) true, if masternode payments are enforced\n"
+            "  \"enforce_communitynode_payments\" : true|false  (boolean) true, if communitynode payments are enforced\n"
             "}\n"
 
             "\nExamples:\n" +
@@ -494,14 +493,14 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     if (strMode != "template")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
-    if(!g_connman)
+    if (!g_connman)
         throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
 
     if (g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0)
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "PIVX is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Posante is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "PIVX is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Posante is downloading blocks...");
 
     static unsigned int nTransactionsUpdatedLast;
 
@@ -530,8 +529,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
 
             WAIT_LOCK(g_best_block_mutex, lock);
             while (g_best_block == hashWatchedChain && IsRPCRunning()) {
-                if (g_best_block_cv.wait_until(lock, checktxtime) == std::cv_status::timeout)
-                {
+                if (g_best_block_cv.wait_until(lock, checktxtime) == std::cv_status::timeout) {
                     // Timeout: Check transactions for update
                     if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP)
                         break;
@@ -579,7 +577,8 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
     pblock->nNonce = 0;
 
-    UniValue aCaps(UniValue::VARR); aCaps.push_back("proposal");
+    UniValue aCaps(UniValue::VARR);
+    aCaps.push_back("proposal");
 
     UniValue transactions(UniValue::VARR);
     std::map<uint256, int64_t> setTxIndex;
@@ -638,13 +637,13 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     result.pushKV("mintime", (int64_t)pindexPrev->GetMedianTimePast() + 1);
     result.pushKV("mutable", aMutable);
     result.pushKV("noncerange", "00000000ffffffff");
-//    result.pushKV("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS);
-//    result.pushKV("sizelimit", (int64_t)MAX_BLOCK_SIZE);
+    //    result.pushKV("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS);
+    //    result.pushKV("sizelimit", (int64_t)MAX_BLOCK_SIZE);
     result.pushKV("curtime", pblock->GetBlockTime());
     result.pushKV("bits", strprintf("%08x", pblock->nBits));
     result.pushKV("height", (int64_t)(pindexPrev->nHeight + 1));
     result.pushKV("votes", aVotes);
-    result.pushKV("enforce_masternode_payments", true);
+    result.pushKV("enforce_communitynode_payments", true);
 
     return result;
 }
@@ -771,25 +770,24 @@ UniValue estimatesmartfee(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
         throw std::runtime_error(
-                "estimatesmartfee nblocks\n"
-                "\nDEPRECATED. WARNING: This interface is unstable and may disappear or change!\n"
-                "\nEstimates the approximate fee per kilobyte needed for a transaction to begin\n"
-                "confirmation within nblocks blocks if possible and return the number of blocks\n"
-                "for which the estimate is valid.\n"
-                "\nArguments:\n"
-                "1. nblocks     (numeric)\n"
-                "\nResult:\n"
-                "{\n"
-                "  \"feerate\" : x.x,     (numeric) estimate fee-per-kilobyte (in BTC)\n"
-                "  \"blocks\" : n         (numeric) block number where estimate was found\n"
-                "}\n"
-                "\n"
-                "A negative value is returned if not enough transactions and blocks\n"
-                "have been observed to make an estimate for any number of blocks.\n"
-                "However it will not return a value below the mempool reject fee.\n"
-                "\nExample:\n"
-                + HelpExampleCli("estimatesmartfee", "6")
-        );
+            "estimatesmartfee nblocks\n"
+            "\nDEPRECATED. WARNING: This interface is unstable and may disappear or change!\n"
+            "\nEstimates the approximate fee per kilobyte needed for a transaction to begin\n"
+            "confirmation within nblocks blocks if possible and return the number of blocks\n"
+            "for which the estimate is valid.\n"
+            "\nArguments:\n"
+            "1. nblocks     (numeric)\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"feerate\" : x.x,     (numeric) estimate fee-per-kilobyte (in BTC)\n"
+            "  \"blocks\" : n         (numeric) block number where estimate was found\n"
+            "}\n"
+            "\n"
+            "A negative value is returned if not enough transactions and blocks\n"
+            "have been observed to make an estimate for any number of blocks.\n"
+            "However it will not return a value below the mempool reject fee.\n"
+            "\nExample:\n" +
+            HelpExampleCli("estimatesmartfee", "6"));
 
     RPCTypeCheck(request.params, {UniValue::VNUM});
 
@@ -804,31 +802,32 @@ UniValue estimatesmartfee(const JSONRPCRequest& request)
 }
 
 static const CRPCCommand commands[] =
-{ //  category              name                      actor (function)         okSafeMode
-  //  --------------------- ------------------------  -----------------------  ----------
-    { "mining",             "prioritisetransaction",  &prioritisetransaction,  true  },
-    { "util",               "estimatefee",            &estimatefee,            true  },
-    { "util",               "estimatesmartfee",       &estimatesmartfee,       true  },
+    {
+        //  category              name                      actor (function)         okSafeMode
+        //  --------------------- ------------------------  -----------------------  ----------
+        {"mining", "prioritisetransaction", &prioritisetransaction, true},
+        {"util", "estimatefee", &estimatefee, true},
+        {"util", "estimatesmartfee", &estimatesmartfee, true},
 
-    /* Not shown in help */
+/* Not shown in help */
 #ifdef ENABLE_WALLET
-    { "hidden",             "generate",               &generate,               true  },
+        {"hidden", "generate", &generate, true},
 #endif
-    { "hidden",             "submitblock",            &submitblock,            true  },
+        {"hidden", "submitblock", &submitblock, true},
 #ifdef ENABLE_MINING_RPC
-    { "hidden",             "getblocktemplate",       &getblocktemplate,       true  },
-    { "hidden",             "getnetworkhashps",       &getnetworkhashps,       true  },
-    { "hidden",             "getmininginfo",          &getmininginfo,          true  },
+        {"hidden", "getblocktemplate", &getblocktemplate, true},
+        {"hidden", "getnetworkhashps", &getnetworkhashps, true},
+        {"hidden", "getmininginfo", &getmininginfo, true},
 #ifdef ENABLE_WALLET
-    { "hidden",             "getgenerate",            &getgenerate,            true  },
-    { "hidden",             "gethashespersec",        &gethashespersec,        true  },
-    { "hidden",             "setgenerate",            &setgenerate,            true  },
+        {"hidden", "getgenerate", &getgenerate, true},
+        {"hidden", "gethashespersec", &gethashespersec, true},
+        {"hidden", "setgenerate", &setgenerate, true},
 #endif // ENABLE_WALLET
 #endif // ENABLE_MINING_RPC
 
-    };
+};
 
-void RegisterMiningRPCCommands(CRPCTable &tableRPC)
+void RegisterMiningRPCCommands(CRPCTable& tableRPC)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);

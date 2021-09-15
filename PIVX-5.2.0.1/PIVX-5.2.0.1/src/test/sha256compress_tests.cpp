@@ -1,5 +1,5 @@
-#include "test/test_pivx.h"
 #include "crypto/sha256.h"
+#include "test/test_posante.h"
 #include "uint256.h"
 
 #include <stdexcept>
@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(compression)
         hasher.FinalizeNoPadding(digest.begin());
 
         BOOST_CHECK_MESSAGE(digest == uint256S("d8a93718eaf9feba4362d2c091d4e58ccabe9f779957336269b4b917be9856da"),
-                            digest.GetHex());
+            digest.GetHex());
     }
 
     {

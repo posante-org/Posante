@@ -5,6 +5,7 @@
 // Copyright (c) 2013-2014 The NovaCoin Developers
 // Copyright (c) 2014-2018 The BlackCoin Developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,7 +13,7 @@
 #define BITCOIN_MAIN_H
 
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
 #include "amount.h"
@@ -40,7 +41,6 @@
 class CBlockIndex;
 class CBlockTreeDB;
 class CBudgetManager;
-class CZerocoinDB;
 class CSporkDB;
 class CBloomFilter;
 class CInv;
@@ -73,7 +73,6 @@ static const bool DEFAULT_RELAYPRIORITY = true;
 static const unsigned int DEFAULT_LIMITFREERELAY = 30;
 /** The maximum size for transactions we're willing to relay/mine */
 static const unsigned int MAX_STANDARD_TX_SIZE = 100000;
-static const unsigned int MAX_ZEROCOIN_TX_SIZE = 150000;
 /** Default for -checkblocks */
 static const signed int DEFAULT_CHECKBLOCKS = 10;
 /** The maximum size of a blk?????.dat file (since 0.8) */
@@ -112,7 +111,7 @@ static const unsigned int AVG_ADDRESS_BROADCAST_INTERVAL = 30;
 static const unsigned int DEFAULT_SHIELDEDTXFEE_K = 100;
 
 /** Enable bloom filter */
- static const bool DEFAULT_PEERBLOOMFILTERS = true;
+static const bool DEFAULT_PEERBLOOMFILTERS = true;
 
 /** If the tip is older than this (in seconds), the node is considered to be in initial block download. */
 static const int64_t DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
@@ -204,7 +203,7 @@ bool GetTransaction(const uint256& hash, CTransactionRef& tx, uint256& hashBlock
 bool GetOutput(const uint256& hash, unsigned int index, CValidationState& state, CTxOut& out);
 
 double ConvertBitsToDouble(unsigned int nBits);
-int64_t GetMasternodePayment();
+int64_t GetMasternodePayment(int nHeight, int64_t blockValue);
 
 /** Find the best known block, and make it the tip of the block chain */
 bool ActivateBestChain(CValidationState& state, std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
@@ -220,12 +219,10 @@ void FlushStateToDisk();
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState& state, const CTransactionRef& tx, bool fLimitFree, bool* pfMissingInputs, bool fOverrideMempoolLimit = false, bool fRejectInsaneFee = false, bool ignoreFees = false);
 
 /** (try to) add transaction to memory pool with a specified acceptance time **/
-bool AcceptToMemoryPoolWithTime(CTxMemPool& pool, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                                bool* pfMissingInputs, int64_t nAcceptTime, bool fOverrideMempoolLimit = false,
-                                bool fRejectInsaneFee = false, bool ignoreFees = false);
+bool AcceptToMemoryPoolWithTime(CTxMemPool& pool, CValidationState& state, const CTransactionRef& tx, bool fLimitFree, bool* pfMissingInputs, int64_t nAcceptTime, bool fOverrideMempoolLimit = false, bool fRejectInsaneFee = false, bool ignoreFees = false);
 
 /** Convert CValidationState to a human-readable message for logging */
-std::string FormatStateMessage(const CValidationState &state);
+std::string FormatStateMessage(const CValidationState& state);
 
 CAmount GetMinRelayFee(const CTransaction& tx, const CTxMemPool& pool, unsigned int nBytes, bool fAllowFree);
 CAmount GetMinRelayFee(unsigned int nBytes, bool fAllowFree);
@@ -254,7 +251,7 @@ CAmount GetShieldedTxMinFee(const CTransaction& tx);
 bool CheckInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& view, bool fScriptChecks, unsigned int flags, bool cacheStore, PrecomputedTransactionData& precomTxData, std::vector<CScriptCheck>* pvChecks = NULL);
 
 /** Apply the effects of this transaction on the UTXO set represented by view */
-void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight, bool fSkipInvalid = false);
+void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
 
 bool IsTransactionInChain(const uint256& txId, int& nHeightTx, CTransactionRef& tx);
 bool IsTransactionInChain(const uint256& txId, int& nHeightTx);
@@ -283,19 +280,18 @@ private:
     unsigned int nFlags;
     bool cacheStore;
     ScriptError error;
-    PrecomputedTransactionData *precomTxData;
+    PrecomputedTransactionData* precomTxData;
 
 public:
     CScriptCheck() : amount(0), ptxTo(0), nIn(0), nFlags(0), cacheStore(false), error(SCRIPT_ERR_UNKNOWN_ERROR), precomTxData(nullptr) {}
-    CScriptCheck(const CScript& scriptPubKeyIn, const CAmount amountIn, const CTransaction& txToIn, unsigned int nInIn, unsigned int nFlagsIn, bool cacheIn, PrecomputedTransactionData* cachedHashesIn) :
-        scriptPubKey(scriptPubKeyIn),
-        amount(amountIn),
-        ptxTo(&txToIn),
-        nIn(nInIn),
-        nFlags(nFlagsIn),
-        cacheStore(cacheIn),
-        error(SCRIPT_ERR_UNKNOWN_ERROR),
-        precomTxData(cachedHashesIn) {}
+    CScriptCheck(const CScript& scriptPubKeyIn, const CAmount amountIn, const CTransaction& txToIn, unsigned int nInIn, unsigned int nFlagsIn, bool cacheIn, PrecomputedTransactionData* cachedHashesIn) : scriptPubKey(scriptPubKeyIn),
+                                                                                                                                                                                                           amount(amountIn),
+                                                                                                                                                                                                           ptxTo(&txToIn),
+                                                                                                                                                                                                           nIn(nInIn),
+                                                                                                                                                                                                           nFlags(nFlagsIn),
+                                                                                                                                                                                                           cacheStore(cacheIn),
+                                                                                                                                                                                                           error(SCRIPT_ERR_UNKNOWN_ERROR),
+                                                                                                                                                                                                           precomTxData(cachedHashesIn) {}
 
     bool operator()();
 
@@ -368,9 +364,6 @@ extern CCoinsViewCache* pcoinsTip;
 
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB* pblocktree;
-
-/** Global variable that points to the zerocoin database (protected by cs_main) */
-extern CZerocoinDB* zerocoinDB;
 
 /** Global variable that points to the spork database (protected by cs_main) */
 extern CSporkDB* pSporkDB;

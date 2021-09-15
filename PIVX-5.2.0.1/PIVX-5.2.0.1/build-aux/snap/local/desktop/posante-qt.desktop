@@ -1,0 +1,15 @@
+# http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-1.0.html
+
+[Desktop Entry]
+Encoding=UTF-8
+Name=Posante Core
+Comment=Posante Core QT main network
+GenericName=Posante Digital Currency QT client main network
+Exec=posante-core.qt %u
+Terminal=false
+Type=Application
+Icon=${SNAP}/share/pixmaps/posante.png
+MimeType=x-scheme-handler/posante;
+Categories=X-Office;X-Finance;
+Keywords=internet;posante;zposa;posa;core;wallet;qt;main;snap;launchpad;crypto;digital;currency;coin;token;zerocoin;
+Version=1.0

@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -43,18 +44,18 @@
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDesktopWidget>
-#include <QRegExp>
-#include <QRegularExpression>
-#include <QRegularExpressionValidator>
 #include <QFileDialog>
 #include <QFont>
 #include <QLineEdit>
+#include <QMouseEvent>
+#include <QRegExp>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QScreen>
 #include <QSettings>
 #include <QTextDocument> // for Qt::mightBeRichText
 #include <QThread>
 #include <QUrlQuery>
-#include <QMouseEvent>
 
 
 #if defined(Q_OS_MAC)
@@ -67,7 +68,7 @@ extern double NSAppKitVersionNumber;
 #endif
 #endif
 
-#define URI_SCHEME "pivx"
+#define URI_SCHEME "posante"
 
 #if defined(Q_OS_MAC)
 #pragma GCC diagnostic push
@@ -121,14 +122,14 @@ CAmount parseValue(const QString& text, int displayUnit, bool* valid_out)
     return valid ? val : 0;
 }
 
-QString formatBalance(CAmount amount, int nDisplayUnit, bool isZpiv)
+QString formatBalance(CAmount amount, int nDisplayUnit)
 {
-    return (amount == 0) ? ("0.00 " + BitcoinUnits::name(nDisplayUnit, isZpiv)) : BitcoinUnits::floorHtmlWithUnit(nDisplayUnit, amount, false, BitcoinUnits::separatorAlways, true, isZpiv);
+    return (amount == 0) ? ("0.00 " + BitcoinUnits::name(nDisplayUnit)) : BitcoinUnits::floorHtmlWithUnit(nDisplayUnit, amount, false, BitcoinUnits::separatorAlways, true);
 }
 
-QString formatBalanceWithoutHtml(CAmount amount, int nDisplayUnit, bool isZpiv)
+QString formatBalanceWithoutHtml(CAmount amount, int nDisplayUnit)
 {
-    return (amount == 0) ? ("0.00 " + BitcoinUnits::name(nDisplayUnit, isZpiv)) : BitcoinUnits::floorWithUnit(nDisplayUnit, amount, false, BitcoinUnits::separatorAlways, true, isZpiv);
+    return (amount == 0) ? ("0.00 " + BitcoinUnits::name(nDisplayUnit)) : BitcoinUnits::floorWithUnit(nDisplayUnit, amount, false, BitcoinUnits::separatorAlways, true);
 }
 
 void setupAddressWidget(QValidatedLineEdit* widget, QWidget* parent)
@@ -138,15 +139,15 @@ void setupAddressWidget(QValidatedLineEdit* widget, QWidget* parent)
     widget->setFont(bitcoinAddressFont());
     // We don't want translators to use own addresses in translations
     // and this is the only place, where this address is supplied.
-    widget->setPlaceholderText(QObject::tr("Enter PIVX address (e.g. %1)").arg("D7VFR83SQbiezrW72hjcWJtcfip5krte2Z"));
+    widget->setPlaceholderText(QObject::tr("Enter Posante address (e.g. %1)").arg("M7VFR83SQbiezrW72hjcWJtcfip5krte2Z"));
     widget->setValidator(new BitcoinAddressEntryValidator(parent));
     widget->setCheckValidator(new BitcoinAddressCheckValidator(parent));
 }
 
 void setupAmountWidget(QLineEdit* widget, QWidget* parent)
 {
-    QRegularExpression rx("^(\\d{0,8})((\\.|,)\\d{1,8})?$");
-    QValidator *validator = new QRegularExpressionValidator(rx, widget);
+    QRegularExpression rx("^(\\d{0,10})((\\.|,)\\d{1,6})?$");
+    QValidator* validator = new QRegularExpressionValidator(rx, widget);
     widget->setValidator(validator);
 }
 
@@ -160,7 +161,7 @@ void updateWidgetTextAndCursorPosition(QLineEdit* widget, const QString& str)
 
 bool parseBitcoinURI(const QUrl& uri, SendCoinsRecipient* out)
 {
-    // return if URI is not valid or is no PIVX: URI
+    // return if URI is not valid or is no Posante: URI
     if (!uri.isValid() || uri.scheme() != QString(URI_SCHEME))
         return false;
 
@@ -174,8 +175,7 @@ bool parseBitcoinURI(const QUrl& uri, SendCoinsRecipient* out)
 
     QUrlQuery uriQuery(uri);
     QList<QPair<QString, QString> > items = uriQuery.queryItems();
-    for (QList<QPair<QString, QString> >::iterator i = items.begin(); i != items.end(); i++)
-    {
+    for (QList<QPair<QString, QString> >::iterator i = items.begin(); i != items.end(); i++) {
         bool fShouldReturnFalse = false;
         if (i->first.startsWith("req-")) {
             i->first.remove(0, 4);
@@ -191,7 +191,7 @@ bool parseBitcoinURI(const QUrl& uri, SendCoinsRecipient* out)
             fShouldReturnFalse = false;
         } else if (i->first == "amount") {
             if (!i->second.isEmpty()) {
-                if (!BitcoinUnits::parse(BitcoinUnits::PIV, i->second, &rv.amount)) {
+                if (!BitcoinUnits::parse(BitcoinUnits::POSA, i->second, &rv.amount)) {
                     return false;
                 }
             }
@@ -209,9 +209,9 @@ bool parseBitcoinURI(const QUrl& uri, SendCoinsRecipient* out)
 
 bool parseBitcoinURI(QString uri, SendCoinsRecipient* out)
 {
-    // Convert pivx:// to pivx:
+    // Convert posante:// to posante:
     //
-    //    Cannot handle this later, because pivx:// will cause Qt to see the part after // as host,
+    //    Cannot handle this later, because posante:// will cause Qt to see the part after // as host,
     //    which will lower-case it (and thus invalidate the address).
     if (uri.startsWith(URI_SCHEME "://", Qt::CaseInsensitive)) {
         uri.replace(0, std::strlen(URI_SCHEME) + 3, URI_SCHEME ":");
@@ -226,7 +226,7 @@ QString formatBitcoinURI(const SendCoinsRecipient& info)
     int paramCount = 0;
 
     if (info.amount) {
-        ret += QString("?amount=%1").arg(BitcoinUnits::format(BitcoinUnits::PIV, info.amount, false, BitcoinUnits::separatorNever));
+        ret += QString("?amount=%1").arg(BitcoinUnits::format(BitcoinUnits::POSA, info.amount, false, BitcoinUnits::separatorNever));
         paramCount++;
     }
 
@@ -280,7 +280,7 @@ void copyEntryData(QAbstractItemView* view, int column, int role)
     }
 }
 
-QVariant getEntryData(QAbstractItemView *view, int column, int role)
+QVariant getEntryData(QAbstractItemView* view, int column, int role)
 {
     if (!view || !view->selectionModel())
         return QVariant();
@@ -300,9 +300,7 @@ QString getSaveFileName(QWidget* parent, const QString& caption, const QString& 
     if (dir.isEmpty()) // Default to user documents location
     {
         myDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    }
-    else
-    {
+    } else {
         myDir = dir;
     }
     /* Directly convert path to native OS path separators */
@@ -340,9 +338,7 @@ QString getOpenFileName(QWidget* parent, const QString& caption, const QString& 
     if (dir.isEmpty()) // Default to user documents location
     {
         myDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    }
-    else
-    {
+    } else {
         myDir = dir;
     }
     /* Directly convert path to native OS path separators */
@@ -631,16 +627,16 @@ bool DHMSTableWidgetItem::operator<(QTableWidgetItem const& item) const
 fs::path static StartupShortcutPath()
 {
     if (gArgs.GetBoolArg("-testnet", false))
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "PIVX (testnet).lnk";
+        return GetSpecialFolderPath(CSIDL_STARTUP) / "Posante (testnet).lnk";
     else if (gArgs.GetBoolArg("-regtest", false))
-        return GetSpecialFolderPath(CSIDL_STARTUP) / "PIVX (regtest).lnk";
+        return GetSpecialFolderPath(CSIDL_STARTUP) / "Posante (regtest).lnk";
 
-    return GetSpecialFolderPath(CSIDL_STARTUP) / "PIVX.lnk";
+    return GetSpecialFolderPath(CSIDL_STARTUP) / "Posante.lnk";
 }
 
 bool GetStartOnSystemStartup()
 {
-    // check for PIVX*.lnk
+    // check for Posante*.lnk
     return fs::exists(StartupShortcutPath());
 }
 
@@ -711,7 +707,7 @@ fs::path static GetAutostartDir()
 
 fs::path static GetAutostartFilePath()
 {
-    return GetAutostartDir() / "pivx.desktop";
+    return GetAutostartDir() / "posante.desktop";
 }
 
 bool GetStartOnSystemStartup()
@@ -737,7 +733,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
     if (!fAutoStart) {
         fs::remove(GetAutostartFilePath());
     } else {
-        char pszExePath[MAX_PATH+1];
+        char pszExePath[MAX_PATH + 1];
         ssize_t r = readlink("/proc/self/exe", pszExePath, sizeof(pszExePath) - 1);
         if (r == -1)
             return false;
@@ -748,15 +744,15 @@ bool SetStartOnSystemStartup(bool fAutoStart)
         fs::ofstream optionFile(GetAutostartFilePath(), std::ios_base::out | std::ios_base::trunc);
         if (!optionFile.good())
             return false;
-        // Write a pivx.desktop file to the autostart directory:
+        // Write a posante.desktop file to the autostart directory:
         optionFile << "[Desktop Entry]\n";
         optionFile << "Type=Application\n";
         if (gArgs.GetBoolArg("-testnet", false))
-            optionFile << "Name=PIVX (testnet)\n";
+            optionFile << "Name=Posante (testnet)\n";
         else if (gArgs.GetBoolArg("-regtest", false))
-            optionFile << "Name=PIVX (regtest)\n";
+            optionFile << "Name=Posante (regtest)\n";
         else
-            optionFile << "Name=PIVX\n";
+            optionFile << "Name=Posante\n";
         optionFile << "Exec=" << pszExePath << strprintf(" -min -testnet=%d -regtest=%d\n", gArgs.GetBoolArg("-testnet", false), gArgs.GetBoolArg("-regtest", false));
         optionFile << "Terminal=false\n";
         optionFile << "Hidden=false\n";
@@ -777,21 +773,21 @@ LSSharedFileListItemRef findStartupItemInList(LSSharedFileListRef list, CFURLRef
         return nullptr;
     }
 
-    // loop through the list of startup items and try to find the pivx app
+    // loop through the list of startup items and try to find the posante app
     for (int i = 0; i < CFArrayGetCount(listSnapshot); i++) {
         LSSharedFileListItemRef item = (LSSharedFileListItemRef)CFArrayGetValueAtIndex(listSnapshot, i);
         UInt32 resolutionFlags = kLSSharedFileListNoUserInteraction | kLSSharedFileListDoNotMountVolumes;
         CFURLRef currentItemURL = nullptr;
 
 #if defined(MAC_OS_X_VERSION_MAX_ALLOWED) && MAC_OS_X_VERSION_MAX_ALLOWED >= 10100
-    if (&LSSharedFileListItemCopyResolvedURL)
-        currentItemURL = LSSharedFileListItemCopyResolvedURL(item, resolutionFlags, nullptr);
+        if (&LSSharedFileListItemCopyResolvedURL)
+            currentItemURL = LSSharedFileListItemCopyResolvedURL(item, resolutionFlags, nullptr);
 #if defined(MAC_OS_X_VERSION_MIN_REQUIRED) && MAC_OS_X_VERSION_MIN_REQUIRED < 10100
-    else
-        LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, nullptr);
+        else
+            LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, nullptr);
 #endif
 #else
-    LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, nullptr);
+        LSSharedFileListItemResolve(item, resolutionFlags, &currentItemURL, nullptr);
 #endif
 
         if (currentItemURL) {
@@ -834,7 +830,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
     LSSharedFileListItemRef foundItem = findStartupItemInList(loginItems, bitcoinAppUrl);
 
     if (fAutoStart && !foundItem) {
-        // add pivx app to startup item list
+        // add posante app to startup item list
         LSSharedFileListInsertItemURL(loginItems, kLSSharedFileListItemBeforeFirst, nullptr, nullptr, bitcoinAppUrl, nullptr, nullptr);
     } else if (!fAutoStart && foundItem) {
         // remove item
@@ -907,7 +903,7 @@ QString loadStyleSheet()
             cssName = QString(":/css/") + theme;
         } else {
             cssName = QString(":/css/default");
-            settings.setValue("theme", "default");
+            settings.setValue("theme", "default-dark");
         }
     }
 
@@ -990,7 +986,7 @@ QString formatPingTime(double dPingTime)
 
 QString formatTimeOffset(int64_t nTimeOffset)
 {
-  return QString(QObject::tr("%1 s")).arg(QString::number((int)nTimeOffset, 10));
+    return QString(QObject::tr("%1 s")).arg(QString::number((int)nTimeOffset, 10));
 }
 
 } // namespace GUIUtil

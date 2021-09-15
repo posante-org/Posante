@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -19,9 +20,7 @@ std::string TransactionRecord::getValueOrReturnEmpty(const std::map<std::string,
     return it != mapValue.end() ? it->second : "";
 }
 
-bool TransactionRecord::decomposeCoinStake(const CWallet* wallet, const CWalletTx& wtx,
-        const CAmount& nCredit, const CAmount& nDebit,
-        QList<TransactionRecord>& parts)
+bool TransactionRecord::decomposeCoinStake(const CWallet* wallet, const CWalletTx& wtx, const CAmount& nCredit, const CAmount& nDebit, QList<TransactionRecord>& parts)
 {
     // Return if it's not a coinstake
     if (!wtx.IsCoinStake()) {
@@ -38,7 +37,7 @@ bool TransactionRecord::decomposeCoinStake(const CWallet* wallet, const CWalletT
             sub.debit = -nDebit;
             loadHotOrColdStakeOrContract(wallet, wtx, sub);
         } else {
-            // PIV stake reward
+            // POSA stake reward
             CTxDestination address;
             if (!ExtractDestination(wtx.tx->vout[1].scriptPubKey, address))
                 return true;
@@ -51,8 +50,8 @@ bool TransactionRecord::decomposeCoinStake(const CWallet* wallet, const CWalletT
     } else {
         //Masternode reward
         CTxDestination destMN;
-        int nIndexMN = (int) wtx.tx->vout.size() - 1;
-        if (ExtractDestination(wtx.tx->vout[nIndexMN].scriptPubKey, destMN) && (mine = IsMine(*wallet, destMN)) ) {
+        int nIndexMN = (int)wtx.tx->vout.size() - 1;
+        if (ExtractDestination(wtx.tx->vout[nIndexMN].scriptPubKey, destMN) && (mine = IsMine(*wallet, destMN))) {
             sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
             sub.type = TransactionRecord::MNReward;
             sub.address = EncodeDestination(destMN);
@@ -64,52 +63,7 @@ bool TransactionRecord::decomposeCoinStake(const CWallet* wallet, const CWalletT
     return true;
 }
 
-bool TransactionRecord::decomposeZcSpendTx(const CWallet* wallet, const CWalletTx& wtx,
-                                           const CAmount& nCredit, const CAmount& nDebit,
-                                           QList<TransactionRecord>& parts)
-{
-
-    // Return if it's not a zc spend
-    if (!wtx.tx->HasZerocoinSpendInputs()) {
-        return false;
-    }
-
-    // Basic values
-    const uint256& hash = wtx.GetHash();
-    int64_t nTime = wtx.GetTxTime();
-
-    //zerocoin spend outputs
-    for (unsigned int nOut = 0; nOut < wtx.tx->vout.size(); nOut++) {
-        const CTxOut& txout = wtx.tx->vout[nOut];
-        // change that was reminted as zerocoins
-        if (txout.IsZerocoinMint()) {
-            continue;
-        }
-
-        std::string strAddress;
-        CTxDestination address;
-        if (ExtractDestination(txout.scriptPubKey, address))
-            strAddress = EncodeDestination(address);
-
-        // a zerocoinspend that was sent to an address held by this wallet
-        isminetype mine = wallet->IsMine(txout);
-        if (mine) {
-            TransactionRecord sub(hash, nTime, wtx.tx->GetTotalSize());
-            sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
-            sub.type = TransactionRecord::RecvFromZerocoinSpend;
-            sub.credit = txout.nValue;
-            sub.address = (!strAddress.empty()) ? strAddress : getValueOrReturnEmpty(wtx.mapValue, "recvzerocoinspend");
-            sub.idx = (int) nOut;
-            parts.append(sub);
-            continue;
-        }
-    }
-    return true;
-}
-
-bool TransactionRecord::decomposeP2CS(const CWallet* wallet, const CWalletTx& wtx,
-                                           const CAmount& nCredit, const CAmount& nDebit,
-                                           QList<TransactionRecord>& parts)
+bool TransactionRecord::decomposeP2CS(const CWallet* wallet, const CWalletTx& wtx, const CAmount& nCredit, const CAmount& nDebit, QList<TransactionRecord>& parts)
 {
     if (wtx.tx->HasP2CSOutputs()) {
         // Delegate tx.
@@ -140,11 +94,11 @@ bool TransactionRecord::decomposeCreditTransaction(const CWallet* wallet, const 
         isminetype mine = wallet->IsMine(txout);
         if (mine) {
             CTxDestination address;
-            sub.idx = (int) nOut; // vout index
+            sub.idx = (int)nOut; // vout index
             sub.credit = txout.nValue;
             sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
             if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address)) {
-                // Received by PIVX Address
+                // Received by Posante Address
                 sub.type = TransactionRecord::RecvWithAddress;
                 sub.address = EncodeDestination(address);
             } else {
@@ -163,7 +117,7 @@ bool TransactionRecord::decomposeCreditTransaction(const CWallet* wallet, const 
 
     if (wtx.tx->hasSaplingData()) {
         auto sspkm = wallet->GetSaplingScriptPubKeyMan();
-        for (int i = 0; i < (int) wtx.tx->sapData->vShieldedOutput.size(); ++i) {
+        for (int i = 0; i < (int)wtx.tx->sapData->vShieldedOutput.size(); ++i) {
             SaplingOutPoint out(sub.hash, i);
             auto opAddr = sspkm->GetOutPointAddress(wtx, out);
             if (opAddr) {
@@ -185,9 +139,7 @@ bool TransactionRecord::decomposeCreditTransaction(const CWallet* wallet, const 
     return true;
 }
 
-bool TransactionRecord::decomposeSendToSelfTransaction(const CWalletTx& wtx, const CAmount& nCredit,
-                                                       const CAmount& nDebit, bool involvesWatchAddress,
-                                                       QList<TransactionRecord>& parts, const CWallet* wallet)
+bool TransactionRecord::decomposeSendToSelfTransaction(const CWalletTx& wtx, const CAmount& nCredit, const CAmount& nDebit, bool involvesWatchAddress, QList<TransactionRecord>& parts, const CWallet* wallet)
 {
     // Payment to self tx is presented as a single record.
     TransactionRecord sub(wtx.GetHash(), wtx.GetTxTime(), wtx.tx->GetTotalSize());
@@ -244,8 +196,7 @@ bool TransactionRecord::decomposeSendToSelfTransaction(const CWalletTx& wtx, con
     return true;
 }
 
-bool TransactionRecord::decomposeShieldedDebitTransaction(const CWallet* wallet, const CWalletTx& wtx, CAmount nTxFee,
-                                                          bool involvesWatchAddress, QList<TransactionRecord>& parts)
+bool TransactionRecord::decomposeShieldedDebitTransaction(const CWallet* wallet, const CWalletTx& wtx, CAmount nTxFee, bool involvesWatchAddress, QList<TransactionRecord>& parts)
 {
     // Return early if there are no outputs.
     if (wtx.tx->sapData->vShieldedOutput.empty()) {
@@ -254,7 +205,7 @@ bool TransactionRecord::decomposeShieldedDebitTransaction(const CWallet* wallet,
 
     TransactionRecord sub(wtx.GetHash(), wtx.GetTxTime(), wtx.tx->GetTotalSize());
     auto sspkm = wallet->GetSaplingScriptPubKeyMan();
-    for (int i = 0; i < (int) wtx.tx->sapData->vShieldedOutput.size(); ++i) {
+    for (int i = 0; i < (int)wtx.tx->sapData->vShieldedOutput.size(); ++i) {
         SaplingOutPoint out(sub.hash, i);
         auto opAddr = sspkm->GetOutPointAddress(wtx, out);
         // skip change
@@ -281,9 +232,7 @@ bool TransactionRecord::decomposeShieldedDebitTransaction(const CWallet* wallet,
 /**
  * Decompose wtx outputs in records.
  */
-bool TransactionRecord::decomposeDebitTransaction(const CWallet* wallet, const CWalletTx& wtx,
-                                                  const CAmount& nDebit, bool involvesWatchAddress,
-                                                  QList<TransactionRecord>& parts)
+bool TransactionRecord::decomposeDebitTransaction(const CWallet* wallet, const CWalletTx& wtx, const CAmount& nDebit, bool involvesWatchAddress, QList<TransactionRecord>& parts)
 {
     // Return early if there are no outputs.
     if (wtx.tx->vout.empty() && wtx.tx->sapData->vShieldedOutput.empty()) {
@@ -308,29 +257,23 @@ bool TransactionRecord::decomposeDebitTransaction(const CWallet* wallet, const C
 
         // Create record
         TransactionRecord sub(txHash, txTime, txSize);
-        sub.idx = (int) nOut;
+        sub.idx = (int)nOut;
         sub.involvesWatchAddress = involvesWatchAddress;
 
         CTxDestination address;
         if (ExtractDestination(txout.scriptPubKey, address)) {
             //This is most likely only going to happen when resyncing deterministic wallet without the knowledge of the
             //private keys that the change was sent to. Do not display a "sent to" here.
-            if (wtx.tx->HasZerocoinMintOutputs())
-                continue;
-            // Sent to PIVX Address
+            // Sent to Posante Address
             sub.type = TransactionRecord::SendToAddress;
             sub.address = EncodeDestination(address);
-        } else if (txout.IsZerocoinMint()){
-            sub.type = TransactionRecord::ZerocoinMint;
-            sub.address = getValueOrReturnEmpty(wtx.mapValue, "zerocoinmint");
-            sub.credit += txout.nValue;
         } else {
             // Sent to IP, or other non-address transaction like OP_EVAL
             sub.type = TransactionRecord::SendToOther;
             sub.address = getValueOrReturnEmpty(wtx.mapValue, "to");
             if (sub.address.empty() && txout.scriptPubKey.StartsWithOpcode(OP_RETURN)) {
                 sub.type = TransactionRecord::SendToNobody;
-                // Burned PIVs, op_return could be for a proposal/budget fee or another sort of data stored there.
+                // Burned POSAs, op_return could be for a proposal/budget fee or another sort of data stored there.
                 std::string comment = wtx.GetComment();
                 if (IsValidUTF8(comment)) {
                     sub.address = comment;
@@ -368,7 +311,7 @@ std::pair<bool, bool> areInputsAndOutputsFromAndToMe(const CWalletTx& wtx, Sapli
 
     // Check if all the shielded outputs are to me
     bool allShieldedOutToMe = true;
-    for (int i = 0; i < (int) wtx.tx->sapData->vShieldedOutput.size(); ++i) {
+    for (int i = 0; i < (int)wtx.tx->sapData->vShieldedOutput.size(); ++i) {
         SaplingOutPoint op(wtx.GetHash(), i);
         isminetype mine = sspkm->IsMine(wtx, op);
         if (mine & ISMINE_WATCH_ONLY_SHIELDED) involvesWatchAddress = true;
@@ -395,11 +338,6 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet* 
     // Decompose cold staking related transactions (with the exception of cold stakes that are decoupled in decomposeCoinStake)
     // future: merge this flow with the 'credit/debit decomposing flow'.
     if (decomposeP2CS(wallet, wtx, nCredit, nDebit, parts)) {
-        return parts;
-    }
-
-    // Decompose zerocoin spend tx if needed (if it's not a zc spend, the method will not perform any action)
-    if (decomposeZcSpendTx(wallet, wtx, nCredit, nDebit, parts)) {
         return parts;
     }
 
@@ -436,7 +374,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet* 
     // Check whether all the shielded spends/outputs are from or to me.
     bool allShieldedSpendsFromMe, allShieldedOutToMe = true;
     std::tie(allShieldedSpendsFromMe, allShieldedOutToMe) =
-            areInputsAndOutputsFromAndToMe(wtx, sspkm, involvesWatchAddress);
+        areInputsAndOutputsFromAndToMe(wtx, sspkm, involvesWatchAddress);
 
     // Check if this tx is purely a payment to self.
     if (fAllFromMe && fAllToMe && allShieldedOutToMe && allShieldedSpendsFromMe) {
@@ -447,7 +385,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet* 
     }
 
     // Check if the tx is debit and decompose it.
-    if (fAllFromMe || wtx.tx->HasZerocoinMintOutputs()) {
+    if (fAllFromMe) {
         if (decomposeDebitTransaction(wallet, wtx, nDebit, involvesWatchAddress, parts)) {
             return parts;
         }
@@ -457,14 +395,15 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet* 
     if (parts.empty()) {
         // if we get to this point, we have a mixed debit transaction, can't break down payees.
         TransactionRecord record(wtx.GetHash(), wtx.GetTxTime(), wtx.tx->GetTotalSize(), TransactionRecord::Other, "", nNet,
-                                 0);
+            0);
         record.involvesWatchAddress = involvesWatchAddress;
         parts.append(record);
     }
     return parts;
 }
 
-bool ExtractAddress(const CScript& scriptPubKey, bool fColdStake, std::string& addressStr) {
+bool ExtractAddress(const CScript& scriptPubKey, bool fColdStake, std::string& addressStr)
+{
     CTxDestination address;
     if (!ExtractDestination(scriptPubKey, address, fColdStake)) {
         // this shouldn't happen..
@@ -472,9 +411,8 @@ bool ExtractAddress(const CScript& scriptPubKey, bool fColdStake, std::string& a
         return false;
     } else {
         addressStr = EncodeDestination(
-                address,
-                (fColdStake ? CChainParams::STAKING_ADDRESS : CChainParams::PUBKEY_ADDRESS)
-        );
+            address,
+            (fColdStake ? CChainParams::STAKING_ADDRESS : CChainParams::PUBKEY_ADDRESS));
         return true;
     }
 }
@@ -487,7 +425,7 @@ void TransactionRecord::loadUnlockColdStake(const CWallet* wallet, const CWallet
     const CScript* p2csScript = nullptr;
     bool isSpendable = false;
 
-    for (const auto &input : wtx.tx->vin) {
+    for (const auto& input : wtx.tx->vin) {
         const CWalletTx* tx = wallet->GetWalletTx(input.prevout.hash);
         if (tx && tx->tx->vout[input.prevout.n].scriptPubKey.IsPayToColdStaking()) {
             p2csScript = &tx->tx->vout[input.prevout.n].scriptPubKey;
@@ -515,16 +453,16 @@ void TransactionRecord::loadUnlockColdStake(const CWallet* wallet, const CWallet
 }
 
 void TransactionRecord::loadHotOrColdStakeOrContract(
-        const CWallet* wallet,
-        const CWalletTx& wtx,
-        TransactionRecord& record,
-        bool isContract)
+    const CWallet* wallet,
+    const CWalletTx& wtx,
+    TransactionRecord& record,
+    bool isContract)
 {
     record.involvesWatchAddress = false;
 
     // Get the p2cs
     CTxOut p2csUtxo;
-    for (const auto & txout : wtx.tx->vout) {
+    for (const auto& txout : wtx.tx->vout) {
         if (txout.scriptPubKey.IsPayToColdStaking()) {
             p2csUtxo = txout;
             break;
@@ -538,7 +476,7 @@ void TransactionRecord::loadHotOrColdStakeOrContract(
         if (isSpendable && isFromMe) {
             // Wallet delegating balance
             record.type = TransactionRecord::P2CSDelegationSentOwner;
-        } else if (isFromMe){
+        } else if (isFromMe) {
             // Wallet delegating balance and transfering ownership
             record.type = TransactionRecord::P2CSDelegationSent;
         } else {
@@ -597,12 +535,10 @@ void TransactionRecord::updateStatus(const CWalletTx& wtx, int chainHeight)
     }
     // For generated transactions, determine maturity
     else if (type == TransactionRecord::Generated ||
-            type == TransactionRecord::StakeMint ||
-            type == TransactionRecord::StakeZPIV ||
-            type == TransactionRecord::MNReward ||
-            type == TransactionRecord::StakeDelegated ||
-            type == TransactionRecord::StakeHot) {
-
+             type == TransactionRecord::StakeMint ||
+             type == TransactionRecord::MNReward ||
+             type == TransactionRecord::StakeDelegated ||
+             type == TransactionRecord::StakeHot) {
         if (nBlocksToMaturity > 0) {
             status.status = TransactionStatus::Immature;
             status.matures_in = nBlocksToMaturity;
@@ -640,15 +576,12 @@ int TransactionRecord::getOutputIndex() const
 
 bool TransactionRecord::isCoinStake() const
 {
-    return (type == TransactionRecord::StakeMint || type == TransactionRecord::Generated || type == TransactionRecord::StakeZPIV);
+    return (type == TransactionRecord::StakeMint || type == TransactionRecord::Generated);
 }
 
 bool TransactionRecord::isAnyColdStakingType() const
 {
-    return (type == TransactionRecord::P2CSDelegation || type == TransactionRecord::P2CSDelegationSent
-            || type == TransactionRecord::P2CSDelegationSentOwner
-            || type == TransactionRecord::StakeDelegated || type == TransactionRecord::StakeHot
-            || type == TransactionRecord::P2CSUnlockOwner || type == TransactionRecord::P2CSUnlockStaker);
+    return (type == TransactionRecord::P2CSDelegation || type == TransactionRecord::P2CSDelegationSent || type == TransactionRecord::P2CSDelegationSentOwner || type == TransactionRecord::StakeDelegated || type == TransactionRecord::StakeHot || type == TransactionRecord::P2CSUnlockOwner || type == TransactionRecord::P2CSUnlockStaker);
 }
 
 bool TransactionRecord::isNull() const
@@ -656,25 +589,26 @@ bool TransactionRecord::isNull() const
     return hash.IsNull() || size == 0;
 }
 
-std::string TransactionRecord::statusToString(){
-    switch (status.status){
-        case TransactionStatus::Confirmed:
-            return "Confirmed";
-        case TransactionStatus::OpenUntilDate:
-            return "OpenUntilDate";
-        case TransactionStatus::OpenUntilBlock:
-            return "OpenUntilBlock";
-        case TransactionStatus::Unconfirmed:
-            return "Unconfirmed";
-        case TransactionStatus::Confirming:
-            return "Confirming";
-        case TransactionStatus::Conflicted:
-            return "Conflicted";
-        case TransactionStatus::Immature:
-            return "Immature";
-        case TransactionStatus::NotAccepted:
-            return "Not Accepted";
-        default:
-            return "No status";
+std::string TransactionRecord::statusToString()
+{
+    switch (status.status) {
+    case TransactionStatus::Confirmed:
+        return "Confirmed";
+    case TransactionStatus::OpenUntilDate:
+        return "OpenUntilDate";
+    case TransactionStatus::OpenUntilBlock:
+        return "OpenUntilBlock";
+    case TransactionStatus::Unconfirmed:
+        return "Unconfirmed";
+    case TransactionStatus::Confirming:
+        return "Confirming";
+    case TransactionStatus::Conflicted:
+        return "Conflicted";
+    case TransactionStatus::Immature:
+        return "Immature";
+    case TransactionStatus::NotAccepted:
+        return "Not Accepted";
+    default:
+        return "No status";
     }
 }

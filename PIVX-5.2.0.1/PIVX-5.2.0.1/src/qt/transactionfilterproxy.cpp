@@ -1,5 +1,6 @@
 // Copyright (c) 2011-2013 The Bitcoin developers
 // Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -41,7 +42,6 @@ bool TransactionFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex& 
     int type = index.data(TransactionTableModel::TypeRole).toInt();
     if (fHideOrphans && isOrphan(status, type)) return false;
     if (!(bool)(TYPE(type) & typeFilter)) return false;
-    if (fOnlyZc && !isZcTx(type)) return false;
     if (fOnlyStakes && !isStakeTx(type)) return false;
     if (fOnlyColdStaking && !isColdStake(type)) return false;
 
@@ -137,18 +137,12 @@ int TransactionFilterProxy::rowCount(const QModelIndex& parent) const
 
 bool TransactionFilterProxy::isOrphan(const int status, const int type)
 {
-    return ( (type == TransactionRecord::Generated || type == TransactionRecord::StakeMint ||
-            type == TransactionRecord::StakeZPIV || type == TransactionRecord::MNReward)
+    return ( (type == TransactionRecord::Generated || type == TransactionRecord::StakeMint || type == TransactionRecord::MNReward)
             && (status == TransactionStatus::Conflicted || status == TransactionStatus::NotAccepted) );
 }
 
-bool TransactionFilterProxy::isZcTx(int type) const {
-    return (type == TransactionRecord::ZerocoinMint || type == TransactionRecord::ZerocoinSpend || type == TransactionRecord::ZerocoinSpend_Change_zPiv
-            || type == TransactionRecord::ZerocoinSpend_FromMe || type == TransactionRecord::RecvFromZerocoinSpend);
-}
-
 bool TransactionFilterProxy::isStakeTx(int type) const {
-    return type == TransactionRecord::StakeMint || type == TransactionRecord::Generated || type == TransactionRecord::StakeZPIV || type == TransactionRecord::StakeDelegated;
+    return type == TransactionRecord::StakeMint || type == TransactionRecord::Generated || type == TransactionRecord::StakeDelegated;
 }
 
 bool TransactionFilterProxy::isColdStake(int type) const {

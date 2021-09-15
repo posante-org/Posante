@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Posante Core
+Comment=Posante P2P Cryptocurrency
+Comment[fr]=Posante, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=Posante, eşten eşe kriptografik sanal para birimi
+Exec=posante-qt %u
+Terminal=false
+Type=Application
+Icon=posante128
+MimeType=x-scheme-handler/posante;
+Categories=Office;Finance;
+StartupWMClass=Posante-qt

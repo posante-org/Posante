@@ -1,5 +1,6 @@
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -190,13 +191,13 @@ std::string CMasternodeSync::GetSyncStatus()
 {
     switch (masternodeSync.RequestedMasternodeAssets) {
     case MASTERNODE_SYNC_INITIAL:
-        return _("MNs synchronization pending...");
+        return _("CNs synchronization pending...");
     case MASTERNODE_SYNC_SPORKS:
         return _("Synchronizing sporks...");
     case MASTERNODE_SYNC_LIST:
-        return _("Synchronizing masternodes...");
+        return _("Synchronizing CN...");
     case MASTERNODE_SYNC_MNW:
-        return _("Synchronizing masternode winners...");
+        return _("Synchronizing CN winners...");
     case MASTERNODE_SYNC_BUDGET:
         return _("Synchronizing budgets...");
     case MASTERNODE_SYNC_FAILED:
@@ -240,7 +241,7 @@ void CMasternodeSync::ProcessMessage(CNode* pfrom, std::string& strCommand, CDat
             break;
         }
 
-        LogPrint(BCLog::MASTERNODE, "CMasternodeSync:ProcessMessage - ssc - got inventory count %d %d\n", nItemID, nCount);
+        LogPrint(BCLog::MASTERNODE, "CCommunitynodeSync:ProcessMessage - ssc - got inventory count %d %d\n", nItemID, nCount);
     }
 }
 
@@ -278,7 +279,7 @@ void CMasternodeSync::Process()
         return;
     }
 
-    LogPrint(BCLog::MASTERNODE, "CMasternodeSync::Process() - tick %d RequestedMasternodeAssets %d\n", tick, RequestedMasternodeAssets);
+    LogPrint(BCLog::MASTERNODE, "CMasternodeSync::Process() - tick %d RequestedCommunitynodeAssets %d\n", tick, RequestedMasternodeAssets);
 
     if (RequestedMasternodeAssets == MASTERNODE_SYNC_INITIAL) GetNextAsset();
 
@@ -319,7 +320,7 @@ bool CMasternodeSync::SyncWithNode(CNode* pnode)
 
     if (pnode->nVersion >= ActiveProtocol()) {
         if (RequestedMasternodeAssets == MASTERNODE_SYNC_LIST) {
-            LogPrint(BCLog::MASTERNODE, "CMasternodeSync::Process() - lastMasternodeList %lld (GetTime() - MASTERNODE_SYNC_TIMEOUT) %lld\n", lastMasternodeList, GetTime() - MASTERNODE_SYNC_TIMEOUT);
+            LogPrint(BCLog::MASTERNODE, "CCommunitynodeSync::Process() - lastCommunitynodeList %lld (GetTime() - MASTERNODE_SYNC_TIMEOUT) %lld\n", lastMasternodeList, GetTime() - MASTERNODE_SYNC_TIMEOUT);
             if (lastMasternodeList > 0 && lastMasternodeList < GetTime() - MASTERNODE_SYNC_TIMEOUT * 2 && RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD) { //hasn't received a new item in the last five seconds, so we'll move to the
                 GetNextAsset();
                 return false;
@@ -332,7 +333,7 @@ bool CMasternodeSync::SyncWithNode(CNode* pnode)
             if (lastMasternodeList == 0 &&
                 (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3 || GetTime() - nAssetSyncStarted > MASTERNODE_SYNC_TIMEOUT * 5)) {
                 if (sporkManager.IsSporkActive(SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT)) {
-                    LogPrintf("CMasternodeSync::Process - ERROR - Sync has failed on %s, will retry later\n", "MASTERNODE_SYNC_LIST");
+                    LogPrintf("CCommunitynodeSync::Process - ERROR - Sync has failed on %s, will retry later\n", "MASTERNODE_SYNC_LIST");
                     RequestedMasternodeAssets = MASTERNODE_SYNC_FAILED;
                     RequestedMasternodeAttempt = 0;
                     lastFailure = GetTime();
@@ -363,7 +364,7 @@ bool CMasternodeSync::SyncWithNode(CNode* pnode)
             if (lastMasternodeWinner == 0 &&
                 (RequestedMasternodeAttempt >= MASTERNODE_SYNC_THRESHOLD * 3 || GetTime() - nAssetSyncStarted > MASTERNODE_SYNC_TIMEOUT * 5)) {
                 if (sporkManager.IsSporkActive(SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT)) {
-                    LogPrintf("CMasternodeSync::Process - ERROR - Sync has failed on %s, will retry later\n", "MASTERNODE_SYNC_MNW");
+                    LogPrintf("CCommunitynodeSync::Process - ERROR - Sync has failed on %s, will retry later\n", "MASTERNODE_SYNC_MNW");
                     RequestedMasternodeAssets = MASTERNODE_SYNC_FAILED;
                     RequestedMasternodeAttempt = 0;
                     lastFailure = GetTime();

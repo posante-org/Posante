@@ -1,17 +1,17 @@
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
 #include "sapling/sapling_operation.h"
 
 #include "coincontrol.h"
-#include "net.h" // for g_connman
+#include "net.h"           // for g_connman
 #include "policy/policy.h" // for GetDustThreshold
 #include "sapling/key_io_sapling.h"
-#include "utilmoneystr.h"        // for FormatMoney
+#include "utilmoneystr.h" // for FormatMoney
 
-struct TxValues
-{
+struct TxValues {
     CAmount transInTotal{0};
     CAmount shieldedInTotal{0};
     CAmount transOutTotal{0};
@@ -26,19 +26,19 @@ OperationResult SaplingOperation::checkTxValues(TxValues& txValues, bool isFromt
 
     if (isFromtAddress && (txValues.transInTotal < txValues.target)) {
         return errorOut(strprintf("Insufficient transparent funds, have %s, need %s",
-                                  FormatMoney(txValues.transInTotal), FormatMoney(txValues.target)));
+            FormatMoney(txValues.transInTotal), FormatMoney(txValues.target)));
     }
 
     if (isFromShielded && (txValues.shieldedInTotal < txValues.target)) {
         return errorOut(strprintf("Insufficient shielded funds, have %s, need %s",
-                                  FormatMoney(txValues.shieldedInTotal), FormatMoney(txValues.target)));
+            FormatMoney(txValues.shieldedInTotal), FormatMoney(txValues.target)));
     }
     return OperationResult(true);
 }
 
-OperationResult loadKeysFromShieldedFrom(const libzcash::SaplingPaymentAddress &addr,
-                                         libzcash::SaplingExpandedSpendingKey& expskOut,
-                                         uint256& ovkOut)
+OperationResult loadKeysFromShieldedFrom(const libzcash::SaplingPaymentAddress& addr,
+    libzcash::SaplingExpandedSpendingKey& expskOut,
+    uint256& ovkOut)
 {
     // Get spending key for address
     libzcash::SaplingExtendedSpendingKey sk;
@@ -53,7 +53,7 @@ OperationResult loadKeysFromShieldedFrom(const libzcash::SaplingPaymentAddress &
 TxValues calculateTarget(const std::vector<SendManyRecipient>& recipients, const CAmount& fee)
 {
     TxValues txValues;
-    for (const SendManyRecipient &t : recipients) {
+    for (const SendManyRecipient& t : recipients) {
         if (t.IsTransparent())
             txValues.transOutTotal += t.transparentRecipient->nValue;
         else
@@ -130,7 +130,7 @@ OperationResult SaplingOperation::build()
         }
 
         // Add outputs
-        for (const SendManyRecipient &t : recipients) {
+        for (const SendManyRecipient& t : recipients) {
             if (t.IsTransparent()) {
                 txBuilder.AddTransparentOutput(*t.transparentRecipient);
             } else {
@@ -189,12 +189,12 @@ OperationResult SaplingOperation::build()
                 return errorOut(strprintf("The transaction fee is too high: %s > %s", FormatMoney(nFeeRet), FormatMoney(100 * nFeeNeeded)));
             }
             // Done, enough fee included
-            LogPrint(BCLog::SAPLING, "%s: spending %s to send %s with fee %s (min required %s)\n", __func__ , FormatMoney(txValues.target),
-                    FormatMoney(txValues.shieldedOutTotal + txValues.transOutTotal), FormatMoney(nFeeRet), FormatMoney(nFeeNeeded));
-            LogPrint(BCLog::SAPLING, "%s: transparent input: %s (to choose from)\n", __func__ , FormatMoney(txValues.transInTotal));
-            LogPrint(BCLog::SAPLING, "%s: private input: %s (to choose from)\n", __func__ , FormatMoney(txValues.shieldedInTotal));
-            LogPrint(BCLog::SAPLING, "%s: transparent output: %s\n", __func__ , FormatMoney(txValues.transOutTotal));
-            LogPrint(BCLog::SAPLING, "%s: private output: %s\n", __func__ , FormatMoney(txValues.shieldedOutTotal));
+            LogPrint(BCLog::SAPLING, "%s: spending %s to send %s with fee %s (min required %s)\n", __func__, FormatMoney(txValues.target),
+                FormatMoney(txValues.shieldedOutTotal + txValues.transOutTotal), FormatMoney(nFeeRet), FormatMoney(nFeeNeeded));
+            LogPrint(BCLog::SAPLING, "%s: transparent input: %s (to choose from)\n", __func__, FormatMoney(txValues.transInTotal));
+            LogPrint(BCLog::SAPLING, "%s: private input: %s (to choose from)\n", __func__, FormatMoney(txValues.shieldedInTotal));
+            LogPrint(BCLog::SAPLING, "%s: transparent output: %s\n", __func__, FormatMoney(txValues.transOutTotal));
+            LogPrint(BCLog::SAPLING, "%s: private output: %s\n", __func__, FormatMoney(txValues.shieldedOutTotal));
             break;
         }
         if (fee > 0 && nFeeNeeded > fee) {
@@ -206,7 +206,7 @@ OperationResult SaplingOperation::build()
             return errorOut("Unable to compute optimal fee. Set manually.");
         }
         // include more fee and try again
-        LogPrint(BCLog::SAPLING, "%s: incrementing fee: %s --> %s\n", __func__ , FormatMoney(nFeeRet), FormatMoney(nFeeNeeded));
+        LogPrint(BCLog::SAPLING, "%s: incrementing fee: %s --> %s\n", __func__, FormatMoney(nFeeRet), FormatMoney(nFeeNeeded));
         clearTx();
         nFeeRet = nFeeNeeded;
     }
@@ -283,12 +283,12 @@ OperationResult SaplingOperation::loadUtxos(TxValues& txValues)
     std::set<CTxDestination> destinations;
     if (fromAddress.isFromTAddress()) destinations.insert(fromAddress.fromTaddr);
     CWallet::AvailableCoinsFilter coinsFilter(fIncludeDelegated,
-                                              false,
-                                              ALL_COINS,
-                                              true,
-                                              true,
-                                              &destinations,
-                                              mindepth);
+        false,
+        ALL_COINS,
+        true,
+        true,
+        &destinations,
+        mindepth);
     if (!pwalletMain->AvailableCoins(&transInputs, nullptr, coinsFilter)) {
         return errorOut("Insufficient funds, no available UTXO to spend");
     }
@@ -321,14 +321,14 @@ OperationResult SaplingOperation::loadUtxos(TxValues& txValues)
 
     // Not enough funds
     if (selectedUTXOAmount < txValues.target) {
-                return errorOut(strprintf("Insufficient transparent funds, have %s, need %s",
-                                  FormatMoney(selectedUTXOAmount), FormatMoney(txValues.target)));
+        return errorOut(strprintf("Insufficient transparent funds, have %s, need %s",
+            FormatMoney(selectedUTXOAmount), FormatMoney(txValues.target)));
     }
 
     // If there is transparent change, is it valid or is it dust?
     if (dustChange < dustThreshold && dustChange != 0) {
         return errorOut(strprintf("Insufficient transparent funds, have %s, need %s more to avoid creating invalid change output %s (dust threshold is %s)",
-                                  FormatMoney(selectedUTXOAmount), FormatMoney(dustThreshold - dustChange), FormatMoney(dustChange), FormatMoney(dustThreshold)));
+            FormatMoney(selectedUTXOAmount), FormatMoney(dustThreshold - dustChange), FormatMoney(dustChange), FormatMoney(dustThreshold)));
     }
 
     return loadUtxos(txValues, selectedTInputs, selectedUTXOAmount);
@@ -352,7 +352,9 @@ OperationResult SaplingOperation::loadUtxos(TxValues& txValues, const std::vecto
  * correctly cached. If the witness is missing, return an error. If the nullifier is missing,
  * recover it from the note (now that we have the spending key).
  */
-enum CacheCheckResult {OK, SPENT, INVALID};
+enum CacheCheckResult { OK,
+    SPENT,
+    INVALID };
 static CacheCheckResult CheckCachedNote(const SaplingNoteEntry& t, const libzcash::SaplingExpandedSpendingKey& expsk)
 {
     auto sspkm = pwalletMain->GetSaplingScriptPubKeyMan();
@@ -415,16 +417,16 @@ OperationResult SaplingOperation::loadUnspentNotes(TxValues& txValues, uint256& 
             std::vector<SaplingNoteEntry> _shieldedInputs;
             sspkm->GetFilteredNotes(_shieldedInputs, fromAddress.fromSapAddr, 0);
             return errorOut(_shieldedInputs.empty() ?
-                    "Insufficient funds, no available notes to spend" :
-                    "Insufficient funds, shielded PIV need at least 5 confirmations");
+                                "Insufficient funds, no available notes to spend" :
+                                "Insufficient funds, shielded POSA need at least 5 confirmations");
         }
     }
 
     // sort in descending order, so big notes appear first
     std::sort(shieldedInputs.begin(), shieldedInputs.end(),
-              [](const SaplingNoteEntry& i, const SaplingNoteEntry& j) -> bool {
-                  return i.note.value() > j.note.value();
-              });
+        [](const SaplingNoteEntry& i, const SaplingNoteEntry& j) -> bool {
+            return i.note.value() > j.note.value();
+        });
 
     // Now select the notes that we are going to use.
     std::vector<SaplingOutPoint> ops;
@@ -474,13 +476,13 @@ OperationResult SaplingOperation::loadUnspentNotes(TxValues& txValues, uint256& 
 
     // Not enough funds
     if (txValues.shieldedInTotal < txValues.target) {
-                return errorOut(strprintf("Insufficient shielded funds, have %s, need %s",
-                                  FormatMoney(txValues.shieldedInTotal), FormatMoney(txValues.target)));
+        return errorOut(strprintf("Insufficient shielded funds, have %s, need %s",
+            FormatMoney(txValues.shieldedInTotal), FormatMoney(txValues.target)));
     }
 
     // Fetch Sapling anchor and witnesses
     uint256 anchor;
-    std::vector<boost::optional<SaplingWitness>> witnesses;
+    std::vector<boost::optional<SaplingWitness> > witnesses;
     pwalletMain->GetSaplingScriptPubKeyMan()->GetSaplingNoteWitnesses(ops, witnesses, anchor);
 
     // Add Sapling spends
@@ -533,14 +535,14 @@ OperationResult CheckTransactionSize(std::vector<SendManyRecipient>& recipients,
             mtx.sapData->vShieldedOutput.emplace_back();
         } else {
             return errorOut(strprintf("invalid recipient shielded address %s",
-                    KeyIO::EncodePaymentAddress(t.shieldedRecipient->address)));
+                KeyIO::EncodePaymentAddress(t.shieldedRecipient->address)));
         }
     }
     CTransaction tx(mtx);
     size_t txsize = GetSerializeSize(tx, SER_NETWORK, tx.nVersion) + CTXOUT_REGULAR_SIZE * nTransparentOuts;
     if (fromTaddr) {
         txsize += CTXIN_SPEND_DUST_SIZE;
-        txsize += CTXOUT_REGULAR_SIZE;      // There will probably be taddr change
+        txsize += CTXOUT_REGULAR_SIZE; // There will probably be taddr change
     }
     if (txsize > max_tx_size) {
         return errorOut(strprintf("Too many outputs, size of raw transaction would be larger than limit of %d bytes", max_tx_size));

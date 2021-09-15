@@ -1,0 +1,6 @@
+usr/local/bin/posante-qt usr/bin
+share/pixmaps/posante32.xpm usr/share/pixmaps
+share/pixmaps/posante16.xpm usr/share/pixmaps
+share/pixmaps/posante128.png usr/share/pixmaps
+debian/posante-qt.desktop usr/share/applications
+debian/posante-qt.protocol usr/share/kde4/services/

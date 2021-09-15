@@ -1,9 +1,10 @@
 // Copyright (c) 2016-2020 The ZCash developers
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include "sapling/address.h"
 #include "sapling/note.h"
@@ -20,7 +21,8 @@
 BOOST_FIXTURE_TEST_SUITE(sapling_note_tests, BasicTestingSetup)
 
 // Test data from https://github.com/zcash-hackworks/zcash-test-vectors/blob/master/sapling_key_components.py
-BOOST_AUTO_TEST_CASE(testVectors) {
+BOOST_AUTO_TEST_CASE(testVectors)
+{
     uint64_t v = 0;
     uint64_t note_pos = 0;
     std::array<uint8_t, 11> diversifier{0xf1, 0x9d, 0x9b, 0x79, 0x7e, 0x39, 0xf3, 0x37, 0x44, 0x58, 0x39};
@@ -59,7 +61,8 @@ BOOST_AUTO_TEST_CASE(testVectors) {
     BOOST_CHECK(note.nullifier(spendingKey.full_viewing_key(), note_pos) == nf);
 }
 
-BOOST_AUTO_TEST_CASE(random) {
+BOOST_AUTO_TEST_CASE(random)
+{
     CAmount MAX_MONEY_OUT = 21000000 * COIN;
     // Test creating random notes using the same spending key
     auto address = libzcash::SaplingSpendingKey::random().default_address();

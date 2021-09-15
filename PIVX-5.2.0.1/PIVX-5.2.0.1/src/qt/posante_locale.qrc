@@ -1,0 +1,17 @@
+<!DOCTYPE RCC><RCC version="1.0">
+    <qresource prefix="/translations">
+        <file alias="de">locale/posante_de.qm</file>
+        <file alias="en">locale/posante_en.qm</file>
+        <file alias="en_US">locale/posante_en_US.qm</file>
+        <file alias="es">locale/posante_es.qm</file>
+        <file alias="es_ES">locale/posante_es_ES.qm</file>
+        <file alias="fr_FR">locale/posante_fr_FR.qm</file>
+        <file alias="hr_HR">locale/posante_hr_HR.qm</file>
+        <file alias="it">locale/posante_it.qm</file>
+        <file alias="ko_KR">locale/posante_ko_KR.qm</file>
+        <file alias="nl">locale/posante_nl.qm</file>
+        <file alias="pl">locale/posante_pl.qm</file>
+        <file alias="ru">locale/posante_ru.qm</file>
+        <file alias="zh_CN">locale/posante_zh_CN.qm</file>
+    </qresource>
+</RCC>

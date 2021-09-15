@@ -1,5 +1,6 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2017-2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,8 +12,8 @@
 
 #include "net.h"
 
-#include <QDialog>
 #include <QCompleter>
+#include <QDialog>
 
 class ClientModel;
 class RPCTimerInterface;
@@ -83,8 +84,8 @@ public Q_SLOTS:
     void walletResync();
 
     void reject();
-    void message(int category, const QString &msg) { message(category, msg, false); }
-    void message(int category, const QString &message, bool html);
+    void message(int category, const QString& msg) { message(category, msg, false); }
+    void message(int category, const QString& message, bool html);
     /** Set number of connections shown in the UI */
     void setNumConnections(int count);
     /** Set number of blocks shown in the UI */
@@ -105,7 +106,7 @@ public Q_SLOTS:
     void showPeers();
     /** Switch to wallet-repair tab and show */
     void showRepair();
-    /** Open external (default) editor with pivx.conf */
+    /** Open external (default) editor with posante.conf */
     void showConfEditor();
     /** Open external (default) editor with masternode.conf */
     void showMNConfEditor();
@@ -151,10 +152,10 @@ private:
     QStringList history;
     int historyPtr;
     NodeId cachedNodeid;
-    QCompleter *autoCompleter;
-    QMenu *peersTableContextMenu;
-    QMenu *banTableContextMenu;
-    RPCTimerInterface *rpcTimerInterface;
+    QCompleter* autoCompleter;
+    QMenu* peersTableContextMenu;
+    QMenu* banTableContextMenu;
+    RPCTimerInterface* rpcTimerInterface;
 };
 
 #endif // BITCOIN_QT_RPCCONSOLE_H

@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,11 +10,11 @@
 #include "clientversion.h"
 #include "httpserver.h"
 #include "init.h"
-#include "sapling/key_io_sapling.h"
 #include "masternode-sync.h"
 #include "net.h"
 #include "netbase.h"
 #include "rpc/server.h"
+#include "sapling/key_io_sapling.h"
 #include "spork.h"
 #include "timedata.h"
 #include "util.h"
@@ -58,7 +59,7 @@ UniValue getinfo(const JSONRPCRequest& request)
             "  \"protocolversion\": xxxxx,     (numeric) the protocol version\n"
             "  \"services\": \"xxxx\",         (string) The network services provided by this client\n"
             "  \"walletversion\": xxxxx,       (numeric) the wallet version\n"
-            "  \"balance\": xxxxxxx,           (numeric) the total pivx balance of the wallet\n"
+            "  \"balance\": xxxxxxx,           (numeric) the total posante balance of the wallet\n"
             "  \"staking status\": true|false, (boolean) if the wallet is staking or not\n"
             "  \"blocks\": xxxxxx,             (numeric) the current number of blocks processed in the server\n"
             "  \"timeoffset\": xxxxx,          (numeric) the time offset\n"
@@ -74,8 +75,8 @@ UniValue getinfo(const JSONRPCRequest& request)
             "  \"keypoololdest\": xxxxxx,      (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
             "  \"keypoolsize\": xxxx,          (numeric) how many new keys are pre-generated\n"
             "  \"unlocked_until\": ttt,        (numeric) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked\n"
-            "  \"paytxfee\": x.xxxx,           (numeric) the transaction fee set in pivx/kb\n"
-            "  \"relayfee\": x.xxxx,           (numeric) minimum relay fee for non-free transactions in pivx/kb\n"
+            "  \"paytxfee\": x.xxxx,           (numeric) the transaction fee set in posante/kb\n"
+            "  \"relayfee\": x.xxxx,           (numeric) minimum relay fee for non-free transactions in posante/kb\n"
             "  \"errors\": \"...\"             (string) any error messages\n"
             "}\n"
 
@@ -93,15 +94,15 @@ UniValue getinfo(const JSONRPCRequest& request)
         uint64_t check = 1 << i;
         if (g_connman->GetLocalServices() & check) {
             switch (check) {
-                case NODE_NETWORK:
-                    services+= "NETWORK/";
-                    break;
-                case NODE_BLOOM:
-                case NODE_BLOOM_WITHOUT_MN:
-                    services+= "BLOOM/";
-                    break;
-                default:
-                    services+= "UNKNOWN/";
+            case NODE_NETWORK:
+                services += "NETWORK/";
+                break;
+            case NODE_BLOOM:
+            case NODE_BLOOM_WITHOUT_MN:
+                services += "BLOOM/";
+                break;
+            default:
+                services += "UNKNOWN/";
             }
         }
     }
@@ -122,7 +123,7 @@ UniValue getinfo(const JSONRPCRequest& request)
 #endif
     obj.pushKV("blocks", (int)chainActive.Height());
     obj.pushKV("timeoffset", GetTimeOffset());
-    if(g_connman)
+    if (g_connman)
         obj.pushKV("connections", (int)g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL));
     obj.pushKV("proxy", (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : std::string()));
     obj.pushKV("difficulty", (double)GetDifficulty());
@@ -166,21 +167,21 @@ UniValue mnsync(const JSONRPCRequest& request)
             "\nResult ('status' mode):\n"
             "{\n"
             "  \"IsBlockchainSynced\": true|false,    (boolean) 'true' if blockchain is synced\n"
-            "  \"lastMasternodeList\": xxxx,        (numeric) Timestamp of last MN list message\n"
-            "  \"lastMasternodeWinner\": xxxx,      (numeric) Timestamp of last MN winner message\n"
+            "  \"lastCommunitynodeList\": xxxx,        (numeric) Timestamp of last MN list message\n"
+            "  \"lastCommunitynodeWinner\": xxxx,      (numeric) Timestamp of last MN winner message\n"
             "  \"lastBudgetItem\": xxxx,            (numeric) Timestamp of last MN budget message\n"
             "  \"lastFailure\": xxxx,           (numeric) Timestamp of last failed sync\n"
             "  \"nCountFailures\": n,           (numeric) Number of failed syncs (total)\n"
-            "  \"sumMasternodeList\": n,        (numeric) Number of MN list messages (total)\n"
-            "  \"sumMasternodeWinner\": n,      (numeric) Number of MN winner messages (total)\n"
+            "  \"sumCommunitynodeList\": n,        (numeric) Number of MN list messages (total)\n"
+            "  \"sumCommunitynodeWinner\": n,      (numeric) Number of MN winner messages (total)\n"
             "  \"sumBudgetItemProp\": n,        (numeric) Number of MN budget messages (total)\n"
             "  \"sumBudgetItemFin\": n,         (numeric) Number of MN budget finalization messages (total)\n"
-            "  \"countMasternodeList\": n,      (numeric) Number of MN list messages (local)\n"
-            "  \"countMasternodeWinner\": n,    (numeric) Number of MN winner messages (local)\n"
+            "  \"countCommunitynodeList\": n,      (numeric) Number of MN list messages (local)\n"
+            "  \"countCommunitynodeWinner\": n,    (numeric) Number of MN winner messages (local)\n"
             "  \"countBudgetItemProp\": n,      (numeric) Number of MN budget messages (local)\n"
             "  \"countBudgetItemFin\": n,       (numeric) Number of MN budget finalization messages (local)\n"
-            "  \"RequestedMasternodeAssets\": n, (numeric) Status code of last sync phase\n"
-            "  \"RequestedMasternodeAttempt\": n, (numeric) Status code of last sync attempt\n"
+            "  \"RequestedCommunitynodeAssets\": n, (numeric) Status code of last sync phase\n"
+            "  \"RequestedCommunitynodeAttempt\": n, (numeric) Status code of last sync attempt\n"
             "}\n"
 
             "\nResult ('reset' mode):\n"
@@ -194,21 +195,21 @@ UniValue mnsync(const JSONRPCRequest& request)
         UniValue obj(UniValue::VOBJ);
 
         obj.pushKV("IsBlockchainSynced", masternodeSync.IsBlockchainSynced());
-        obj.pushKV("lastMasternodeList", masternodeSync.lastMasternodeList);
-        obj.pushKV("lastMasternodeWinner", masternodeSync.lastMasternodeWinner);
+        obj.pushKV("lastCommunitynodeList", masternodeSync.lastMasternodeList);
+        obj.pushKV("lastCommunitynodeWinner", masternodeSync.lastMasternodeWinner);
         obj.pushKV("lastBudgetItem", masternodeSync.lastBudgetItem);
         obj.pushKV("lastFailure", masternodeSync.lastFailure);
         obj.pushKV("nCountFailures", masternodeSync.nCountFailures);
-        obj.pushKV("sumMasternodeList", masternodeSync.sumMasternodeList);
-        obj.pushKV("sumMasternodeWinner", masternodeSync.sumMasternodeWinner);
+        obj.pushKV("sumCommunitynodeList", masternodeSync.sumMasternodeList);
+        obj.pushKV("sumCommunitynodeWinner", masternodeSync.sumMasternodeWinner);
         obj.pushKV("sumBudgetItemProp", masternodeSync.sumBudgetItemProp);
         obj.pushKV("sumBudgetItemFin", masternodeSync.sumBudgetItemFin);
-        obj.pushKV("countMasternodeList", masternodeSync.countMasternodeList);
-        obj.pushKV("countMasternodeWinner", masternodeSync.countMasternodeWinner);
+        obj.pushKV("countCommunitynodeList", masternodeSync.countMasternodeList);
+        obj.pushKV("countCommunitynodeWinner", masternodeSync.countMasternodeWinner);
         obj.pushKV("countBudgetItemProp", masternodeSync.countBudgetItemProp);
         obj.pushKV("countBudgetItemFin", masternodeSync.countBudgetItemFin);
-        obj.pushKV("RequestedMasternodeAssets", masternodeSync.RequestedMasternodeAssets);
-        obj.pushKV("RequestedMasternodeAttempt", masternodeSync.RequestedMasternodeAttempt);
+        obj.pushKV("RequestedCommunitynodeAssets", masternodeSync.RequestedMasternodeAssets);
+        obj.pushKV("RequestedCommunitynodeAttempt", masternodeSync.RequestedMasternodeAttempt);
 
         return obj;
     }
@@ -229,9 +230,10 @@ private:
 public:
     DescribeAddressVisitor(isminetype mineIn) : mine(mineIn) {}
 
-    UniValue operator()(const CNoDestination &dest) const { return UniValue(UniValue::VOBJ); }
+    UniValue operator()(const CNoDestination& dest) const { return UniValue(UniValue::VOBJ); }
 
-    UniValue operator()(const CKeyID &keyID) const {
+    UniValue operator()(const CKeyID& keyID) const
+    {
         UniValue obj(UniValue::VOBJ);
         CPubKey vchPubKey;
         obj.pushKV("isscript", false);
@@ -243,7 +245,8 @@ public:
         return obj;
     }
 
-    UniValue operator()(const CScriptID &scriptID) const {
+    UniValue operator()(const CScriptID& scriptID) const
+    {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("isscript", true);
         CScript subscript;
@@ -335,9 +338,10 @@ class DescribePaymentAddressVisitor : public boost::static_visitor<UniValue>
 {
 public:
     explicit DescribePaymentAddressVisitor(bool _isStaking) : isStaking(_isStaking) {}
-    UniValue operator()(const libzcash::InvalidEncoding &zaddr) const { return UniValue(UniValue::VOBJ); }
+    UniValue operator()(const libzcash::InvalidEncoding& zaddr) const { return UniValue(UniValue::VOBJ); }
 
-    UniValue operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
+    UniValue operator()(const libzcash::SaplingPaymentAddress& zaddr) const
+    {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("diversifier", HexStr(zaddr.d));
         obj.pushKV("diversifiedtransmissionkey", zaddr.pk_d.GetHex());
@@ -349,7 +353,8 @@ public:
         return obj;
     }
 
-    UniValue operator()(const CTxDestination &dest) const {
+    UniValue operator()(const CTxDestination& dest) const
+    {
         UniValue ret(UniValue::VOBJ);
         CScript scriptPubKey = GetScriptForDestination(dest);
         ret.pushKV("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end()));
@@ -375,19 +380,19 @@ UniValue validateaddress(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
         throw std::runtime_error(
-            "validateaddress \"pivxaddress\"\n"
-            "\nReturn information about the given pivx address.\n"
+            "validateaddress \"posanteaddress\"\n"
+            "\nReturn information about the given posante address.\n"
 
             "\nArguments:\n"
-            "1. \"pivxaddress\"     (string, required) The pivx address to validate\n"
+            "1. \"posanteaddress\"     (string, required) The posante address to validate\n"
 
             "\nResult:\n"
             "{\n"
             "  \"isvalid\" : true|false,         (boolean) If the address is valid or not. If not, this is the only property returned.\n"
-            "  \"address\" : \"pivxaddress\",    (string) The pivx address validated\n"
+            "  \"address\" : \"posanteaddress\",    (string) The posante address validated\n"
             "  \"scriptPubKey\" : \"hex\",       (string) The hex encoded scriptPubKey generated by the address -only if is standard address-\n"
             "  \"ismine\" : true|false,          (boolean) If the address is yours or not\n"
-            "  \"isstaking\" : true|false,       (boolean) If the address is a staking address for PIVX cold staking -only if is standard address-\n"
+            "  \"isstaking\" : true|false,       (boolean) If the address is a staking address for Posante cold staking -only if is standard address-\n"
             "  \"iswatchonly\" : true|false,     (boolean) If the address is watchonly -only if standard address-\n"
             "  \"isscript\" : true|false,        (boolean) If the key is a script -only if standard address-\n"
             "  \"hex\" : \"hex\",                (string, optional) The redeemscript for the P2SH address -only if standard address-\n"
@@ -459,13 +464,13 @@ CScript _createmultisig_redeemScript(const UniValue& params)
     for (unsigned int i = 0; i < keys.size(); i++) {
         const std::string& ks = keys[i].get_str();
 #ifdef ENABLE_WALLET
-        // Case 1: PIVX address and we have full public key:
+        // Case 1: Posante address and we have full public key:
         CTxDestination dest = DecodeDestination(ks);
         if (pwalletMain && IsValidDestination(dest)) {
             const CKeyID* keyID = boost::get<CKeyID>(&dest);
             if (!keyID) {
                 throw std::runtime_error(
-                        strprintf("%s does not refer to a key", ks));
+                    strprintf("%s does not refer to a key", ks));
             }
             CPubKey vchPubKey;
             if (!pwalletMain->GetPubKey(*keyID, vchPubKey))
@@ -507,9 +512,9 @@ UniValue createmultisig(const JSONRPCRequest& request)
 
             "\nArguments:\n"
             "1. nrequired      (numeric, required) The number of required signatures out of the n keys or addresses.\n"
-            "2. \"keys\"       (string, required) A json array of keys which are pivx addresses or hex-encoded public keys\n"
+            "2. \"keys\"       (string, required) A json array of keys which are posante addresses or hex-encoded public keys\n"
             "     [\n"
-            "       \"key\"    (string) pivx address or hex-encoded public key\n"
+            "       \"key\"    (string) posante address or hex-encoded public key\n"
             "       ,...\n"
             "     ]\n"
 
@@ -540,11 +545,11 @@ UniValue verifymessage(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 3)
         throw std::runtime_error(
-            "verifymessage \"pivxaddress\" \"signature\" \"message\"\n"
+            "verifymessage \"posanteaddress\" \"signature\" \"message\"\n"
             "\nVerify a signed message\n"
 
             "\nArguments:\n"
-            "1. \"pivxaddress\"  (string, required) The pivx address to use for the signature.\n"
+            "1. \"posanteaddress\"  (string, required) The posante address to use for the signature.\n"
             "2. \"signature\"    (string, required) The signature provided by the signer in base 64 encoding (see signmessage).\n"
             "3. \"message\"      (string, required) The message that was signed.\n"
 
@@ -613,7 +618,7 @@ UniValue setmocktime(const JSONRPCRequest& request)
     SetMockTime(request.params[0].get_int64());
 
     uint64_t t = GetTime();
-    if(g_connman) {
+    if (g_connman) {
         g_connman->ForEachNode([t](CNode* pnode) {
             pnode->nLastSend = pnode->nLastRecv = t;
         });
@@ -622,7 +627,8 @@ UniValue setmocktime(const JSONRPCRequest& request)
     return NullUniValue;
 }
 
-void EnableOrDisableLogCategories(UniValue cats, bool enable) {
+void EnableOrDisableLogCategories(UniValue cats, bool enable)
+{
     cats = cats.get_array();
     for (unsigned int i = 0; i < cats.size(); ++i) {
         std::string cat = cats[i].get_str();
@@ -647,23 +653,22 @@ UniValue logging(const JSONRPCRequest& request)
             "Gets and sets the logging configuration.\n"
             "When called without an argument, returns the list of categories that are currently being debug logged.\n"
             "When called with arguments, adds or removes categories from debug logging.\n"
-            "The valid logging categories are: " + ListLogCategories() + "\n"
-            "libevent logging is configured on startup and cannot be modified by this RPC during runtime."
+            "The valid logging categories are: " +
+            ListLogCategories() + "\n"
+                                  "libevent logging is configured on startup and cannot be modified by this RPC during runtime."
 
-            "Arguments:\n"
-            "1. \"include\" (array of strings) add debug logging for these categories.\n"
-            "2. \"exclude\" (array of strings) remove debug logging for these categories.\n"
+                                  "Arguments:\n"
+                                  "1. \"include\" (array of strings) add debug logging for these categories.\n"
+                                  "2. \"exclude\" (array of strings) remove debug logging for these categories.\n"
 
-            "\nResult:\n"
-            "{                            (object): a JSON object of the logging categories that are active.\n"
-            "  \"category\": fEnabled,    (key/value) Key is the category name, value is a boolean of it's active state.\n"
-            "  ...,\n"
-            "}\n"
+                                  "\nResult:\n"
+                                  "{                            (object): a JSON object of the logging categories that are active.\n"
+                                  "  \"category\": fEnabled,    (key/value) Key is the category name, value is a boolean of it's active state.\n"
+                                  "  ...,\n"
+                                  "}\n"
 
-            "\nExamples:\n"
-            + HelpExampleCli("logging", "\"[\\\"all\\\"]\" \"[\\\"http\\\"]\"")
-            + HelpExampleRpc("logging", "[\"all\"], \"[libevent]\"")
-        );
+                                  "\nExamples:\n" +
+            HelpExampleCli("logging", "\"[\\\"all\\\"]\" \"[\\\"http\\\"]\"") + HelpExampleRpc("logging", "[\"all\"], \"[libevent]\""));
     }
 
     uint32_t original_log_categories = g_logger->GetCategoryMask();
@@ -686,7 +691,7 @@ UniValue logging(const JSONRPCRequest& request)
         if (!UpdateHTTPServerLogging(g_logger->WillLogCategory(BCLog::LIBEVENT))) {
             g_logger->DisableCategory(BCLog::LIBEVENT);
             if (changed_log_categories == BCLog::LIBEVENT) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "libevent logging cannot be updated when using libevent before v2.1.1.");
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "libevent logging cannot be updated when using libevent before v2.1.1.");
             }
         }
     }
@@ -701,21 +706,22 @@ UniValue logging(const JSONRPCRequest& request)
 }
 
 static const CRPCCommand commands[] =
-{ //  category              name                      actor (function)         okSafeMode
-  //  --------------------- ------------------------  -----------------------  ----------
-    { "control",            "getinfo",                &getinfo,                true  }, /* uses wallet if enabled */
-    { "control",            "mnsync",                 &mnsync,                 true  },
-    { "control",            "spork",                  &spork,                  true  },
-    { "util",               "validateaddress",        &validateaddress,        true  }, /* uses wallet if enabled */
-    { "util",               "createmultisig",         &createmultisig,         true  },
-    { "util",               "logging",                &logging,                true  },
-    { "util",               "verifymessage",          &verifymessage,          true  },
+    {
+        //  category              name                      actor (function)         okSafeMode
+        //  --------------------- ------------------------  -----------------------  ----------
+        {"control", "getinfo", &getinfo, true}, /* uses wallet if enabled */
+        {"control", "mnsync", &mnsync, true},
+        {"control", "spork", &spork, true},
+        {"util", "validateaddress", &validateaddress, true}, /* uses wallet if enabled */
+        {"util", "createmultisig", &createmultisig, true},
+        {"util", "logging", &logging, true},
+        {"util", "verifymessage", &verifymessage, true},
 
-    /* Not shown in help */
-    { "hidden",             "setmocktime",            &setmocktime,            true  },
+        /* Not shown in help */
+        {"hidden", "setmocktime", &setmocktime, true},
 };
 
-void RegisterMiscRPCCommands(CRPCTable &tableRPC)
+void RegisterMiscRPCCommands(CRPCTable& tableRPC)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);

@@ -1,0 +1,81 @@
+policy_module(posante, 1.100.1)
+
+########################################
+#
+# Declarations
+#
+
+type posante_t;
+type posante_exec_t;
+init_daemon_domain(posante_t, posante_exec_t)
+
+permissive posante_t;
+
+type posante_initrc_exec_t;
+init_script_file(posante_initrc_exec_t)
+
+type posante_conf_t;
+files_type(posante_conf_t)
+
+type posante_var_lib_t;
+files_type(posante_var_lib_t)
+
+type posante_var_run_t;
+files_type(posante_var_run_t)
+
+type posante_port_t;
+corenet_port(posante_port_t)
+
+########################################
+#
+# posante local policy
+#
+allow posante_t self:process { fork };
+
+allow posante_t self:fifo_file rw_fifo_file_perms;
+allow posante_t self:unix_stream_socket create_stream_socket_perms;
+
+manage_dirs_pattern(posante_t, posante_conf_t, posante_conf_t)
+manage_files_pattern(posante_t, posante_conf_t, posante_conf_t)
+
+manage_dirs_pattern(posante_t, posante_var_lib_t, posante_var_lib_t)
+manage_files_pattern(posante_t, posante_var_lib_t, posante_var_lib_t)
+files_var_lib_filetrans(posante_t, posante_var_lib_t, { dir file })
+
+manage_dirs_pattern(posante_t, posante_var_run_t, posante_var_run_t)
+manage_files_pattern(posante_t, posante_var_run_t, posante_var_run_t)
+
+sysnet_dns_name_resolve(posante_t)
+corenet_all_recvfrom_unlabeled(posante_t)
+
+allow posante_t self:tcp_socket create_stream_socket_perms;
+corenet_tcp_sendrecv_generic_if(posante_t)
+corenet_tcp_sendrecv_generic_node(posante_t)
+corenet_tcp_sendrecv_all_ports(posante_t)
+corenet_tcp_bind_generic_node(posante_t)
+
+gen_require(`
+    type posante_port_t;
+')
+allow posante_t posante_port_t:tcp_socket name_bind;
+
+gen_require(`
+    type posante_port_t;
+')
+allow posante_t posante_port_t:tcp_socket name_connect;
+
+domain_use_interactive_fds(posante_t)
+
+files_read_etc_files(posante_t)
+
+miscfiles_read_localization(posante_t)
+
+sysnet_dns_name_resolve(posante_t)
+
+allow posante_t posante_exec_t:file execute_no_trans;
+allow posante_t self:process setsched;
+corecmd_exec_ls(posante_t)
+corenet_tcp_connect_http_port(posante_t)
+dev_read_urand(posante_t)
+fs_getattr_xattr_fs(posante_t)
+kernel_read_system_state(posante_t)

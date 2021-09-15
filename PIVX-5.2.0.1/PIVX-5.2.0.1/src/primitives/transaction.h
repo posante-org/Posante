@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -118,9 +119,6 @@ public:
     bool IsFinal() const { return nSequence == std::numeric_limits<uint32_t>::max(); }
     bool IsNull() const { return prevout.IsNull() && scriptSig.empty() && IsFinal(); }
 
-    bool IsZerocoinSpend() const;
-    bool IsZerocoinPublicSpend() const;
-
     friend bool operator==(const CTxIn& a, const CTxIn& b)
     {
         return (a.prevout   == b.prevout &&
@@ -188,8 +186,6 @@ public:
 
     uint256 GetHash() const;
     bool GetKeyIDFromUTXO(CKeyID& keyIDRet) const;
-
-    bool IsZerocoinMint() const;
 
     friend bool operator==(const CTxOut& a, const CTxOut& b)
     {
@@ -370,21 +366,9 @@ public:
     // Compute modified tx size for priority calculation (optionally given tx size)
     unsigned int CalculateModifiedSize(unsigned int nTxSize=0) const;
 
-    bool HasZerocoinSpendInputs() const;
-    bool HasZerocoinPublicSpendInputs() const;
-
-    bool HasZerocoinMintOutputs() const;
-
-    bool ContainsZerocoins() const
-    {
-        return HasZerocoinSpendInputs() || HasZerocoinMintOutputs();
-    }
-
-    CAmount GetZerocoinSpent() const;
-
     bool IsCoinBase() const
     {
-        return (vin.size() == 1 && vin[0].prevout.IsNull() && !ContainsZerocoins());
+        return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
 
     bool IsCoinStake() const;

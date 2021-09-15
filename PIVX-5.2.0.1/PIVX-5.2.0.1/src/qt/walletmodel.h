@@ -1,11 +1,12 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2016 The Dash developers
 // Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef PIVX_QT_WALLETMODEL_H
-#define PIVX_QT_WALLETMODEL_H
+#ifndef Posante_QT_WALLETMODEL_H
+#define Posante_QT_WALLETMODEL_H
 
 #include "askpassphrasedialog.h"
 #include "paymentrequestplus.h"
@@ -114,7 +115,7 @@ public:
     }
 };
 
-/** Interface to PIVX wallet from Qt view code. */
+/** Interface to Posante wallet from Qt view code. */
 class WalletModel : public QObject
 {
     Q_OBJECT
@@ -434,4 +435,4 @@ public Q_SLOTS:
     bool updateAddressBookLabels(const CWDestination& address, const std::string& strName, const std::string& strPurpose);
 };
 
-#endif // PIVX_QT_WALLETMODEL_H
+#endif // Posante_QT_WALLETMODEL_H

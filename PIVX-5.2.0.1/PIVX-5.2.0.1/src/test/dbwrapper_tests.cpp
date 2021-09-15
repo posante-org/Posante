@@ -3,14 +3,15 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "dbwrapper.h"
-#include "uint256.h"
 #include "random.h"
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
+#include "uint256.h"
 
 #include <boost/test/unit_test.hpp>
 
 // Test if a string consists entirely of null characters
-bool is_null_key(const std::vector<unsigned char>& key) {
+bool is_null_key(const std::vector<unsigned char>& key)
+{
     bool isnull = true;
 
     for (unsigned int i = 0; i < key.size(); i++)

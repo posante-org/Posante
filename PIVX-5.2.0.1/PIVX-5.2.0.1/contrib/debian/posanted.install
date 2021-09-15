@@ -1,0 +1,3 @@
+usr/local/bin/posanted usr/bin
+usr/local/bin/posante-cli usr/bin
+debian/examples/posante.conf etc/posante

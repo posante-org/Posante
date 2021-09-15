@@ -1,10 +1,11 @@
 // Copyright (c) 2009-2017 The Bitcoin Core developers
 // Copyright (c) 2017-2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
 #include <cstddef>
@@ -73,22 +74,24 @@ redirects to that.  */
 #undef explicit_bzero
 /* Set LEN bytes of S to 0.  The compiler will not delete a call to
 this function, even if S is dead after the call.  */
-void explicit_bzero (void *s, size_t len)
+void explicit_bzero(void* s, size_t len)
 {
-    memset (s, '\0', len);
+    memset(s, '\0', len);
     /* Compiler barrier.  */
-    asm volatile ("" ::: "memory");
+    asm volatile("" ::
+                     : "memory");
 }
 
 // Redefine explicit_bzero_chk
-void __explicit_bzero_chk (void *dst, size_t len, size_t dstlen)
+void __explicit_bzero_chk(void* dst, size_t len, size_t dstlen)
 {
     /* Inline __memset_chk to avoid a PLT reference to __memset_chk.  */
-    if (__glibc_unlikely (dstlen < len))
-        __chk_fail ();
-    memset (dst, '\0', len);
+    if (__glibc_unlikely(dstlen < len))
+        __chk_fail();
+    memset(dst, '\0', len);
     /* Compiler barrier.  */
-    asm volatile ("" ::: "memory");
+    asm volatile("" ::
+                     : "memory");
 }
 /* libc-internal references use the hidden
 __explicit_bzero_chk_internal symbol.  This is necessary if

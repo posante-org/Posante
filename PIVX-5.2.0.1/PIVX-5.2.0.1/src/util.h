@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,16 +14,16 @@
 #define BITCOIN_UTIL_H
 
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
+#include "compat.h"
 #include "fs.h"
 #include "logging.h"
-#include "compat.h"
 #include "sync.h"
 #include "tinyformat.h"
-#include "utiltime.h"
 #include "util/threadnames.h"
+#include "utiltime.h"
 
 #include <atomic>
 #include <exception>
@@ -40,15 +41,15 @@ class CTranslationInterface
 {
 public:
     /** Translate a message to the native language of the user. */
-    boost::signals2::signal<std::string (const char* psz)> Translate;
+    boost::signals2::signal<std::string(const char* psz)> Translate;
 };
 
-extern const char * const PIVX_CONF_FILENAME;
-extern const char * const PIVX_PID_FILENAME;
-extern const char * const PIVX_MASTERNODE_CONF_FILENAME;
-extern const char * const DEFAULT_DEBUGLOGFILE;
+extern const char* const Posante_CONF_FILENAME;
+extern const char* const Posante_PID_FILENAME;
+extern const char* const Posante_MASTERNODE_CONF_FILENAME;
+extern const char* const DEFAULT_DEBUGLOGFILE;
 
-//PIVX only features
+//Posante only features
 
 extern std::atomic<bool> fMasterNode;
 extern bool fLiteMode;
@@ -72,7 +73,7 @@ inline std::string _(const char* psz)
 void SetupEnvironment();
 bool SetupNetworking();
 
-template<typename... Args>
+template <typename... Args>
 bool error(const char* fmt, const Args&... args)
 {
     LogPrintf("ERROR: %s\n", tfm::format(fmt, args...));
@@ -89,9 +90,9 @@ void AllocateFileRange(FILE* file, unsigned int offset, unsigned int length);
 bool RenameOver(fs::path src, fs::path dest);
 bool TryCreateDirectory(const fs::path& p);
 fs::path GetDefaultDataDir();
-const fs::path &GetDataDir(bool fNetSpecific = true);
+const fs::path& GetDataDir(bool fNetSpecific = true);
 // Sapling network dir
-const fs::path &ZC_GetParamsDir();
+const fs::path& ZC_GetParamsDir();
 // Init sapling library
 void initZKSNARKS();
 void ClearDatadirCache();
@@ -122,7 +123,7 @@ class ArgsManager
 protected:
     mutable RecursiveMutex cs_args;
     std::map<std::string, std::string> mapArgs;
-    std::map<std::string, std::vector<std::string>> mapMultiArgs;
+    std::map<std::string, std::vector<std::string> > mapMultiArgs;
     std::unordered_set<std::string> m_negated_args;
 
 public:
@@ -203,9 +204,8 @@ public:
     void ForceSetArg(const std::string& strArg, const std::string& strValue);
 
 private:
-
     // Munge -nofoo into -foo=0 and track the value as negated.
-    void InterpretNegatedOption(std::string &key, std::string &val);
+    void InterpretNegatedOption(std::string& key, std::string& val);
 };
 
 extern ArgsManager gArgs;
@@ -241,7 +241,7 @@ void SetThreadPriority(int nPriority);
 template <typename Callable>
 void TraceThread(const char* name, Callable func)
 {
-    std::string s = strprintf("pivx-%s", name);
+    std::string s = strprintf("posante-%s", name);
     util::ThreadRename(s.c_str());
     try {
         LogPrintf("%s thread start\n", name);

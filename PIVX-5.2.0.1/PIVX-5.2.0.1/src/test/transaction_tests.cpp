@@ -1,16 +1,17 @@
 // Copyright (c) 2011-2014 The Bitcoin Core developers
 // Copyright (c) 2017-2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include "test/data/tx_invalid.json.h"
 #include "test/data/tx_valid.json.h"
 
-#include "consensus/tx_verify.h"
-#include "clientversion.h"
 #include "checkqueue.h"
+#include "clientversion.h"
+#include "consensus/tx_verify.h"
 #include "core_io.h"
 #include "key.h"
 #include "keystore.h"
@@ -58,8 +59,7 @@ unsigned int ParseScriptFlags(std::string strFlags)
     std::vector<std::string> words;
     boost::algorithm::split(words, strFlags, boost::algorithm::is_any_of(","));
 
-    for (std::string word : words)
-    {
+    for (std::string word : words) {
         if (!mapFlagNames.count(word))
             BOOST_ERROR("Bad test: unknown verification flag '" << word << "'");
         flags |= mapFlagNames[word];
@@ -101,10 +101,8 @@ BOOST_AUTO_TEST_CASE(tx_valid)
     for (unsigned int idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         std::string strTest = test.write();
-        if (test[0].isArray())
-        {
-            if (test.size() != 3 || !test[1].isStr() || !test[2].isStr())
-            {
+        if (test[0].isArray()) {
+            if (test.size() != 3 || !test[1].isStr() || !test[2].isStr()) {
                 BOOST_ERROR("Bad test: " << strTest);
                 continue;
             }
@@ -112,24 +110,21 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             std::map<COutPoint, CScript> mapprevOutScriptPubKeys;
             UniValue inputs = test[0].get_array();
             bool fValid = true;
-        for (unsigned int inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
-            const UniValue& input = inputs[inpIdx];
-                if (!input.isArray())
-                {
+            for (unsigned int inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
+                const UniValue& input = inputs[inpIdx];
+                if (!input.isArray()) {
                     fValid = false;
                     break;
                 }
                 UniValue vinput = input.get_array();
-                if (vinput.size() != 3)
-                {
+                if (vinput.size() != 3) {
                     fValid = false;
                     break;
                 }
 
                 mapprevOutScriptPubKeys[COutPoint(uint256(vinput[0].get_str()), vinput[1].get_int())] = ParseScript(vinput[2].get_str());
             }
-            if (!fValid)
-            {
+            if (!fValid) {
                 BOOST_ERROR("Bad test: " << strTest);
                 continue;
             }
@@ -143,10 +138,8 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             BOOST_CHECK(state.IsValid());
 
             PrecomputedTransactionData precomTxData(tx);
-            for (unsigned int i = 0; i < tx.vin.size(); i++)
-            {
-                if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout))
-                {
+            for (unsigned int i = 0; i < tx.vin.size(); i++) {
+                if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout)) {
                     BOOST_ERROR("Bad test: " << strTest);
                     break;
                 }
@@ -154,8 +147,8 @@ BOOST_AUTO_TEST_CASE(tx_valid)
                 CAmount amount = 0;
                 unsigned int verify_flags = ParseScriptFlags(test[2].get_str());
                 BOOST_CHECK_MESSAGE(VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
-                                                 verify_flags, TransactionSignatureChecker(&tx, i, amount, precomTxData), tx.GetRequiredSigVersion(), &err),
-                                    strTest);
+                                        verify_flags, TransactionSignatureChecker(&tx, i, amount, precomTxData), tx.GetRequiredSigVersion(), &err),
+                    strTest);
                 BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_OK, ScriptErrorString(err));
             }
         }
@@ -177,10 +170,8 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
     for (unsigned int idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         std::string strTest = test.write();
-        if (test[0].isArray())
-        {
-            if (test.size() != 3 || !test[1].isStr() || !test[2].isStr())
-            {
+        if (test[0].isArray()) {
+            if (test.size() != 3 || !test[1].isStr() || !test[2].isStr()) {
                 BOOST_ERROR("Bad test: " << strTest);
                 continue;
             }
@@ -188,24 +179,21 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             std::map<COutPoint, CScript> mapprevOutScriptPubKeys;
             UniValue inputs = test[0].get_array();
             bool fValid = true;
-        for (unsigned int inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
-            const UniValue& input = inputs[inpIdx];
-                if (!input.isArray())
-                {
+            for (unsigned int inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
+                const UniValue& input = inputs[inpIdx];
+                if (!input.isArray()) {
                     fValid = false;
                     break;
                 }
                 UniValue vinput = input.get_array();
-                if (vinput.size() != 3)
-                {
+                if (vinput.size() != 3) {
                     fValid = false;
                     break;
                 }
 
                 mapprevOutScriptPubKeys[COutPoint(uint256(vinput[0].get_str()), vinput[1].get_int())] = ParseScript(vinput[2].get_str());
             }
-            if (!fValid)
-            {
+            if (!fValid) {
                 BOOST_ERROR("Bad test: " << strTest);
                 continue;
             }
@@ -218,10 +206,8 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             fValid = CheckTransaction(tx, false, state) && state.IsValid();
 
             PrecomputedTransactionData precomTxData(tx);
-            for (unsigned int i = 0; i < tx.vin.size() && fValid; i++)
-            {
-                if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout))
-                {
+            for (unsigned int i = 0; i < tx.vin.size() && fValid; i++) {
+                if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout)) {
                     BOOST_ERROR("Bad test: " << strTest);
                     break;
                 }
@@ -229,7 +215,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
                 CAmount amount = 0;
                 unsigned int verify_flags = ParseScriptFlags(test[2].get_str());
                 fValid = VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
-                                      verify_flags, TransactionSignatureChecker(&tx, i, amount, precomTxData), tx.GetRequiredSigVersion(), &err);
+                    verify_flags, TransactionSignatureChecker(&tx, i, amount, precomTxData), tx.GetRequiredSigVersion(), &err);
             }
             BOOST_CHECK_MESSAGE(!fValid, strTest);
             BOOST_CHECK_MESSAGE(err != SCRIPT_ERR_OK, ScriptErrorString(err));
@@ -241,7 +227,7 @@ BOOST_AUTO_TEST_CASE(basic_transaction_tests)
 {
     // Random real transaction (e2769b09e784f32f62ef849763d4f45b98e07ba658647343b915ff832b110436)
     unsigned char ch[] = {0x01, 0x00, 0x00, 0x00, 0x01, 0x6b, 0xff, 0x7f, 0xcd, 0x4f, 0x85, 0x65, 0xef, 0x40, 0x6d, 0xd5, 0xd6, 0x3d, 0x4f, 0xf9, 0x4f, 0x31, 0x8f, 0xe8, 0x20, 0x27, 0xfd, 0x4d, 0xc4, 0x51, 0xb0, 0x44, 0x74, 0x01, 0x9f, 0x74, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x8c, 0x49, 0x30, 0x46, 0x02, 0x21, 0x00, 0xda, 0x0d, 0xc6, 0xae, 0xce, 0xfe, 0x1e, 0x06, 0xef, 0xdf, 0x05, 0x77, 0x37, 0x57, 0xde, 0xb1, 0x68, 0x82, 0x09, 0x30, 0xe3, 0xb0, 0xd0, 0x3f, 0x46, 0xf5, 0xfc, 0xf1, 0x50, 0xbf, 0x99, 0x0c, 0x02, 0x21, 0x00, 0xd2, 0x5b, 0x5c, 0x87, 0x04, 0x00, 0x76, 0xe4, 0xf2, 0x53, 0xf8, 0x26, 0x2e, 0x76, 0x3e, 0x2d, 0xd5, 0x1e, 0x7f, 0xf0, 0xbe, 0x15, 0x77, 0x27, 0xc4, 0xbc, 0x42, 0x80, 0x7f, 0x17, 0xbd, 0x39, 0x01, 0x41, 0x04, 0xe6, 0xc2, 0x6e, 0xf6, 0x7d, 0xc6, 0x10, 0xd2, 0xcd, 0x19, 0x24, 0x84, 0x78, 0x9a, 0x6c, 0xf9, 0xae, 0xa9, 0x93, 0x0b, 0x94, 0x4b, 0x7e, 0x2d, 0xb5, 0x34, 0x2b, 0x9d, 0x9e, 0x5b, 0x9f, 0xf7, 0x9a, 0xff, 0x9a, 0x2e, 0xe1, 0x97, 0x8d, 0xd7, 0xfd, 0x01, 0xdf, 0xc5, 0x22, 0xee, 0x02, 0x28, 0x3d, 0x3b, 0x06, 0xa9, 0xd0, 0x3a, 0xcf, 0x80, 0x96, 0x96, 0x8d, 0x7d, 0xbb, 0x0f, 0x91, 0x78, 0xff, 0xff, 0xff, 0xff, 0x02, 0x8b, 0xa7, 0x94, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x19, 0x76, 0xa9, 0x14, 0xba, 0xde, 0xec, 0xfd, 0xef, 0x05, 0x07, 0x24, 0x7f, 0xc8, 0xf7, 0x42, 0x41, 0xd7, 0x3b, 0xc0, 0x39, 0x97, 0x2d, 0x7b, 0x88, 0xac, 0x40, 0x94, 0xa8, 0x02, 0x00, 0x00, 0x00, 0x00, 0x19, 0x76, 0xa9, 0x14, 0xc1, 0x09, 0x32, 0x48, 0x3f, 0xec, 0x93, 0xed, 0x51, 0xf5, 0xfe, 0x95, 0xe7, 0x25, 0x59, 0xf2, 0xcc, 0x70, 0x43, 0xf9, 0x88, 0xac, 0x00, 0x00, 0x00, 0x00, 0x00};
-    std::vector<unsigned char> vch(ch, ch + sizeof(ch) -1);
+    std::vector<unsigned char> vch(ch, ch + sizeof(ch) - 1);
     CDataStream stream(vch, SER_DISK, CLIENT_VERSION);
     CMutableTransaction tx;
     stream >> tx;
@@ -267,24 +253,23 @@ SetupDummyInputs(CBasicKeyStore& keystoreRet, CCoinsViewCache& coinsRet)
 
     // Add some keys to the keystore:
     CKey key[4];
-    for (int i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         key[i].MakeNewKey(i % 2);
         keystoreRet.AddKey(key[i]);
     }
 
     // Create some dummy input transactions
     dummyTransactions[0].vout.resize(2);
-    dummyTransactions[0].vout[0].nValue = 11*CENT;
+    dummyTransactions[0].vout[0].nValue = 11 * CENT;
     dummyTransactions[0].vout[0].scriptPubKey << ToByteVector(key[0].GetPubKey()) << OP_CHECKSIG;
-    dummyTransactions[0].vout[1].nValue = 50*CENT;
+    dummyTransactions[0].vout[1].nValue = 50 * CENT;
     dummyTransactions[0].vout[1].scriptPubKey << ToByteVector(key[1].GetPubKey()) << OP_CHECKSIG;
     AddCoins(coinsRet, dummyTransactions[0], 0);
 
     dummyTransactions[1].vout.resize(2);
-    dummyTransactions[1].vout[0].nValue = 21*CENT;
+    dummyTransactions[1].vout[0].nValue = 21 * CENT;
     dummyTransactions[1].vout[0].scriptPubKey = GetScriptForDestination(key[2].GetPubKey().GetID());
-    dummyTransactions[1].vout[1].nValue = 22*CENT;
+    dummyTransactions[1].vout[1].nValue = 22 * CENT;
     dummyTransactions[1].vout[1].scriptPubKey = GetScriptForDestination(key[3].GetPubKey().GetID());
     AddCoins(coinsRet, dummyTransactions[1], 0);
 
@@ -310,11 +295,11 @@ BOOST_AUTO_TEST_CASE(test_Get)
     t1.vin[2].prevout.n = 1;
     t1.vin[2].scriptSig << std::vector<unsigned char>(65, 0) << std::vector<unsigned char>(33, 4);
     t1.vout.resize(2);
-    t1.vout[0].nValue = 90*CENT;
+    t1.vout[0].nValue = 90 * CENT;
     t1.vout[0].scriptPubKey << OP_1;
 
     BOOST_CHECK(AreInputsStandard(t1, coins));
-    BOOST_CHECK_EQUAL(coins.GetValueIn(t1), (50+21+22)*CENT);
+    BOOST_CHECK_EQUAL(coins.GetValueIn(t1), (50 + 21 + 22) * CENT);
 
     // Adding extra junk to the scriptSig should make it non-standard:
     t1.vin[0].scriptSig << OP_11;
@@ -325,7 +310,8 @@ BOOST_AUTO_TEST_CASE(test_Get)
     BOOST_CHECK(!AreInputsStandard(t1, coins));
 }
 
-BOOST_AUTO_TEST_CASE(test_big_witness_transaction) {
+BOOST_AUTO_TEST_CASE(test_big_witness_transaction)
+{
     CMutableTransaction mtx;
     mtx.nVersion = 2; // Sapling future version
 
@@ -345,7 +331,7 @@ BOOST_AUTO_TEST_CASE(test_big_witness_transaction) {
     sigHashes.push_back(SIGHASH_ALL);
 
     // create a big transaction of 4500 inputs signed by the same key
-    for(uint32_t ij = 0; ij < 4500; ij++) {
+    for (uint32_t ij = 0; ij < 4500; ij++) {
         uint32_t i = mtx.vin.size();
         uint256 prevId;
         prevId.SetHex("0000000000000000000000000000000000000000000000000000000000000100");
@@ -361,7 +347,7 @@ BOOST_AUTO_TEST_CASE(test_big_witness_transaction) {
     }
 
     // sign all inputs
-    for(uint32_t i = 0; i < mtx.vin.size(); i++) {
+    for (uint32_t i = 0; i < mtx.vin.size(); i++) {
         bool hashSigned = SignSignature(keystore, scriptPubKey, mtx, i, 1000, sigHashes.at(i % sigHashes.size()));
         assert(hashSigned);
     }
@@ -376,11 +362,11 @@ BOOST_AUTO_TEST_CASE(test_big_witness_transaction) {
     CCheckQueue<CScriptCheck> scriptcheckqueue(128);
     CCheckQueueControl<CScriptCheck> control(&scriptcheckqueue);
 
-    for (int i=0; i<20; i++)
+    for (int i = 0; i < 20; i++)
         threadGroup.create_thread(std::bind(&CCheckQueue<CScriptCheck>::Thread, std::ref(scriptcheckqueue)));
 
     std::vector<Coin> coins;
-    for(uint32_t i = 0; i < mtx.vin.size(); i++) {
+    for (uint32_t i = 0; i < mtx.vin.size(); i++) {
         Coin coin;
         coin.nHeight = 1;
         coin.out.nValue = 1000;
@@ -388,7 +374,7 @@ BOOST_AUTO_TEST_CASE(test_big_witness_transaction) {
         coins.emplace_back(std::move(coin));
     }
 
-    for(uint32_t i = 0; i < mtx.vin.size(); i++) {
+    for (uint32_t i = 0; i < mtx.vin.size(); i++) {
         std::vector<CScriptCheck> vChecks;
         const CTxOut& output = coins[tx.vin[i].prevout.n].out;
         CScriptCheck check(output.scriptPubKey, output.nValue, tx, i, SCRIPT_VERIFY_P2SH, false, &precomTxData);
@@ -418,7 +404,7 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
     t.vin[0].prevout.n = 1;
     t.vin[0].scriptSig << std::vector<unsigned char>(65, 0);
     t.vout.resize(1);
-    t.vout[0].nValue = 90*CENT;
+    t.vout[0].nValue = 90 * CENT;
     CKey key;
     key.MakeNewKey(true);
     t.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());

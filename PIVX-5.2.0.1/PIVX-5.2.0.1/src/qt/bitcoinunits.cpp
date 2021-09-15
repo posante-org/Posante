@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -22,18 +23,18 @@ BitcoinUnits::BitcoinUnits(QObject* parent) : QAbstractListModel(parent),
 QList<BitcoinUnits::Unit> BitcoinUnits::availableUnits()
 {
     QList<BitcoinUnits::Unit> unitlist;
-    unitlist.append(PIV);
-    unitlist.append(mPIV);
-    unitlist.append(uPIV);
+    unitlist.append(POSA);
+    unitlist.append(mPOSA);
+    unitlist.append(uPOSA);
     return unitlist;
 }
 
 bool BitcoinUnits::valid(int unit)
 {
     switch (unit) {
-    case PIV:
-    case mPIV:
-    case uPIV:
+    case POSA:
+    case mPOSA:
+    case uPOSA:
         return true;
     default:
         return false;
@@ -43,41 +44,39 @@ bool BitcoinUnits::valid(int unit)
 QString BitcoinUnits::id(int unit)
 {
     switch (unit) {
-    case PIV:
-        return QString("pivx");
-    case mPIV:
-        return QString("mpivx");
-    case uPIV:
-        return QString::fromUtf8("upivx");
+    case POSA:
+        return QString("posante");
+    case mPOSA:
+        return QString("mposante");
+    case uPOSA:
+        return QString::fromUtf8("uposante");
     default:
         return QString("???");
     }
 }
 
-QString BitcoinUnits::name(int unit, bool isZpiv)
+QString BitcoinUnits::name(int unit)
 {
     const QString CURR_UNIT = QString(CURRENCY_UNIT.c_str());
-    QString z = "";
-    if(isZpiv) z = "z";
     if (Params().NetworkIDString() == CBaseChainParams::MAIN) {
         switch (unit) {
-        case PIV:
-            return z + CURR_UNIT;
-        case mPIV:
-            return z + QString("m") + CURR_UNIT;
-        case uPIV:
-            return z + QString::fromUtf8("μ") + CURR_UNIT;
+        case POSA:
+            return CURR_UNIT;
+        case mPOSA:
+            return QString("m") + CURR_UNIT;
+        case uPOSA:
+            return QString::fromUtf8("μ") + CURR_UNIT;
         default:
             return QString("???");
         }
     } else {
         switch (unit) {
-        case PIV:
-            return z + QString("t") + CURR_UNIT;
-        case mPIV:
-            return z + QString("mt") + CURR_UNIT;
-        case uPIV:
-            return z + QString::fromUtf8("μt") + CURR_UNIT;
+        case POSA:
+            return QString("t") + CURR_UNIT;
+        case mPOSA:
+            return QString("mt") + CURR_UNIT;
+        case uPOSA:
+            return QString::fromUtf8("μt") + CURR_UNIT;
         default:
             return QString("???");
         }
@@ -89,22 +88,22 @@ QString BitcoinUnits::description(int unit)
     const QString CURR_UNIT = QString(CURRENCY_UNIT.c_str());
     if (Params().NetworkIDString() == CBaseChainParams::MAIN) {
         switch (unit) {
-        case PIV:
+        case POSA:
             return CURR_UNIT;
-        case mPIV:
+        case mPOSA:
             return QString("Milli-") + CURR_UNIT + QString(" (1 / 1" THIN_SP_UTF8 "000)");
-        case uPIV:
+        case uPOSA:
             return QString("Micro-") + CURR_UNIT + QString(" (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
         default:
             return QString("???");
         }
     } else {
         switch (unit) {
-        case PIV:
+        case POSA:
             return QString("Test") + CURR_UNIT;
-        case mPIV:
+        case mPOSA:
             return QString("Milli-Test") + CURR_UNIT + QString(" (1 / 1" THIN_SP_UTF8 "000)");
-        case uPIV:
+        case uPOSA:
             return QString("Micro-Test") + CURR_UNIT + QString(" (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
         default:
             return QString("???");
@@ -115,26 +114,26 @@ QString BitcoinUnits::description(int unit)
 qint64 BitcoinUnits::factor(int unit)
 {
     switch (unit) {
-    case PIV:
-        return 100000000;
-    case mPIV:
-        return 100000;
-    case uPIV:
-        return 100;
+    case POSA:
+        return 1000000;
+    case mPOSA:
+        return 1000;
+    case uPOSA:
+        return 1;
     default:
-        return 100000000;
+        return 1000000;
     }
 }
 
 int BitcoinUnits::decimals(int unit)
 {
     switch (unit) {
-    case PIV:
-        return 8;
-    case mPIV:
-        return 5;
-    case uPIV:
-        return 2;
+    case POSA:
+        return 6;
+    case mPOSA:
+        return 3;
+    case uPOSA:
+        return 0;
     default:
         return 0;
     }
@@ -144,7 +143,7 @@ QString BitcoinUnits::format(int unit, const CAmount& nIn, bool fPlus, Separator
 {
     // Note: not using straight sprintf here because we do NOT want
     // localized number formatting.
-    if (!valid(unit)){
+    if (!valid(unit)) {
         return QString(); // Refuse to format invalid unit
     }
     qint64 n = (qint64)nIn;
@@ -172,7 +171,7 @@ QString BitcoinUnits::format(int unit, const CAmount& nIn, bool fPlus, Separator
     if (num_decimals <= 0)
         return quotient_str;
 
-    if(cleanRemainderZeros) {
+    if (cleanRemainderZeros) {
         // Clean remainder
         QString cleanRemainder = remainder_str;
         for (int i = (remainder_str.length() - 1); i > 1; i--) {
@@ -215,13 +214,13 @@ QString BitcoinUnits::formatHtmlWithUnit(int unit, const CAmount& amount, bool p
     return QString("<span style='white-space: nowrap;'>%1</span>").arg(str);
 }
 
-QString BitcoinUnits::floorWithUnit(int unit, const CAmount& amount, bool plussign, SeparatorStyle separators, bool cleanRemainderZeros, bool isZPIV)
+QString BitcoinUnits::floorWithUnit(int unit, const CAmount& amount, bool plussign, SeparatorStyle separators, bool cleanRemainderZeros)
 {
     QSettings settings;
     int digits = settings.value("digits").toInt();
 
     QString result = format(unit, amount, plussign, separators, cleanRemainderZeros);
-    if(decimals(unit) > digits) {
+    if (decimals(unit) > digits) {
         if (!cleanRemainderZeros) {
             result.chop(decimals(unit) - digits);
         } else {
@@ -232,12 +231,12 @@ QString BitcoinUnits::floorWithUnit(int unit, const CAmount& amount, bool plussi
         }
     }
 
-    return result + QString(" ") + name(unit, isZPIV);
+    return result + QString(" ") + name(unit);
 }
 
-QString BitcoinUnits::floorHtmlWithUnit(int unit, const CAmount& amount, bool plussign, SeparatorStyle separators, bool cleanRemainderZeros, bool isZPIV)
+QString BitcoinUnits::floorHtmlWithUnit(int unit, const CAmount& amount, bool plussign, SeparatorStyle separators, bool cleanRemainderZeros)
 {
-    QString str(floorWithUnit(unit, amount, plussign, separators, cleanRemainderZeros, isZPIV));
+    QString str(floorWithUnit(unit, amount, plussign, separators, cleanRemainderZeros));
     str.replace(QChar(THIN_SP_CP), QString(COMMA_HTML));
     return QString("<span style='white-space: nowrap;'>%1</span>").arg(str);
 }

@@ -1,16 +1,17 @@
 // Copyright (c) 2013 The Bitcoin Core developers
 // Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include "test/data/sighash.json.h"
 
 #include "consensus/tx_verify.h"
-#include "serialize.h"
-#include "script/script.h"
 #include "script/interpreter.h"
+#include "script/script.h"
+#include "serialize.h"
 #include "util.h"
 #include "validation.h"
 #include "version.h"
@@ -26,8 +27,7 @@ extern UniValue read_json(const std::string& jsondata);
 // Old script.cpp SignatureHash function
 uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType)
 {
-    if (nIn >= txTo.vin.size())
-    {
+    if (nIn >= txTo.vin.size()) {
         printf("ERROR: SignatureHash() : nIn=%d out of range\n", nIn);
         return UINT256_ONE;
     }
@@ -43,8 +43,7 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
     txTmp.vin[nIn].scriptSig = scriptCode;
 
     // Blank out some of the outputs
-    if ((nHashType & 0x1f) == SIGHASH_NONE)
-    {
+    if ((nHashType & 0x1f) == SIGHASH_NONE) {
         // Wildcard payee
         txTmp.vout.clear();
 
@@ -52,17 +51,14 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
         for (unsigned int i = 0; i < txTmp.vin.size(); i++)
             if (i != nIn)
                 txTmp.vin[i].nSequence = 0;
-    }
-    else if ((nHashType & 0x1f) == SIGHASH_SINGLE)
-    {
+    } else if ((nHashType & 0x1f) == SIGHASH_SINGLE) {
         // Only lock-in the txout payee at same index as txin
         unsigned int nOut = nIn;
-        if (nOut >= txTmp.vout.size())
-        {
+        if (nOut >= txTmp.vout.size()) {
             printf("ERROR: SignatureHash() : nOut=%d out of range\n", nOut);
             return UINT256_ONE;
         }
-        txTmp.vout.resize(nOut+1);
+        txTmp.vout.resize(nOut + 1);
         for (unsigned int i = 0; i < nOut; i++)
             txTmp.vout[i].SetNull();
 
@@ -73,8 +69,7 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
     }
 
     // Blank out other inputs completely, not recommended for open transactions
-    if (nHashType & SIGHASH_ANYONECANPAY)
-    {
+    if (nHashType & SIGHASH_ANYONECANPAY) {
         txTmp.vin[0] = txTmp.vin[nIn];
         txTmp.vin.resize(1);
     }
@@ -85,20 +80,24 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
     return ss.GetHash();
 }
 
-void static RandomScript(CScript &script) {
+void static RandomScript(CScript& script)
+{
     static const opcodetype oplist[] = {OP_FALSE, OP_1, OP_2, OP_3, OP_CHECKSIG, OP_IF, OP_VERIF, OP_RETURN, OP_CODESEPARATOR};
     script = CScript();
     int ops = (InsecureRandRange(10));
-    for (int i=0; i<ops; i++)
-        script << oplist[InsecureRandRange(sizeof(oplist)/sizeof(oplist[0]))];
+    for (int i = 0; i < ops; i++)
+        script << oplist[InsecureRandRange(sizeof(oplist) / sizeof(oplist[0]))];
 }
 
-void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
+void static RandomTransaction(CMutableTransaction& tx, bool fSingle)
+{
     bool isSapling = !(InsecureRand32() % 7);
     if (isSapling) {
         tx.nVersion = 2;
     } else {
-        do tx.nVersion = InsecureRand32(); while (tx.nVersion == 2);
+        do
+            tx.nVersion = InsecureRand32();
+        while (tx.nVersion == 2);
     }
     tx.vin.clear();
     tx.vout.clear();
@@ -109,7 +108,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
     int outs = fSingle ? ins : (InsecureRandBits(2)) + 1;
     for (int in = 0; in < ins; in++) {
         tx.vin.emplace_back();
-        CTxIn &txin = tx.vin.back();
+        CTxIn& txin = tx.vin.back();
         txin.prevout.hash = InsecureRand256();
         txin.prevout.n = InsecureRandBits(2);
         RandomScript(txin.scriptSig);
@@ -117,7 +116,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
     }
     for (int out = 0; out < outs; out++) {
         tx.vout.emplace_back();
-        CTxOut &txout = tx.vout.back();
+        CTxOut& txout = tx.vout.back();
         txout.nValue = InsecureRandRange(100000000);
         RandomScript(txout.scriptPubKey);
     }
@@ -125,7 +124,8 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
     if (tx.nVersion == 2) {
         int shielded_spends = (InsecureRandBits(2)) + 1;
         int shielded_outs = (InsecureRandBits(2)) + 1;
-        tx.sapData->valueBalance = InsecureRandRange(100000000);;
+        tx.sapData->valueBalance = InsecureRandRange(100000000);
+        ;
         for (int spend = 0; spend < shielded_spends; spend++) {
             SpendDescription sdesc;
             sdesc.cv = GetRandHash();
@@ -154,16 +154,16 @@ BOOST_AUTO_TEST_CASE(sighash_test)
 {
     SeedInsecureRand(false);
 
-    #if defined(PRINT_SIGHASH_JSON)
+#if defined(PRINT_SIGHASH_JSON)
     std::cout << "[\n";
     std::cout << "\t[\"raw_transaction, script, input_index, hashType, signature_hash (result)\"],\n";
-    #endif
+#endif
     int nRandomTests = 50000;
 
-    #if defined(PRINT_SIGHASH_JSON)
+#if defined(PRINT_SIGHASH_JSON)
     nRandomTests = 500;
-    #endif
-    for (int i=0; i<nRandomTests; i++) {
+#endif
+    for (int i = 0; i < nRandomTests; i++) {
         int nHashType = InsecureRand32();
         CMutableTransaction txTo;
         RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE);
@@ -174,27 +174,27 @@ BOOST_AUTO_TEST_CASE(sighash_test)
         uint256 sh, sho;
         sho = SignatureHashOld(scriptCode, txTo, nIn, nHashType);
         sh = SignatureHash(scriptCode, txTo, nIn, nHashType, 0, txTo.GetRequiredSigVersion());
-        #if defined(PRINT_SIGHASH_JSON)
+#if defined(PRINT_SIGHASH_JSON)
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << txTo;
-        std::cout << "\t[\"" ;
+        std::cout << "\t[\"";
         std::cout << HexStr(ss.begin(), ss.end()) << "\", \"";
         std::cout << HexStr(scriptCode) << "\", ";
         std::cout << nIn << ", ";
         std::cout << nHashType << ", \"";
         std::cout << sho.GetHex() << "\"]";
-        if (i+1 != nRandomTests) {
-          std::cout << ",";
+        if (i + 1 != nRandomTests) {
+            std::cout << ",";
         }
         std::cout << "\n";
-        #endif
+#endif
         if (txTo.nVersion < CTransaction::TxVersion::SAPLING) { // Sapling has a different signature.
             BOOST_CHECK(sh == sho);
         }
     }
-    #if defined(PRINT_SIGHASH_JSON)
+#if defined(PRINT_SIGHASH_JSON)
     std::cout << "]\n";
-    #endif
+#endif
 }
 
 // Goal: check that SignatureHash generates correct hash
@@ -220,31 +220,30 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
         CScript scriptCode = CScript();
 
         try {
-          // deserialize test data
-          raw_tx = test[0].get_str();
-          raw_script = test[1].get_str();
-          nIn = test[2].get_int();
-          nHashType = test[3].get_int();
-          sigHashHex = test[4].get_str();
+            // deserialize test data
+            raw_tx = test[0].get_str();
+            raw_script = test[1].get_str();
+            nIn = test[2].get_int();
+            nHashType = test[3].get_int();
+            sigHashHex = test[4].get_str();
 
-          uint256 sh;
-          CDataStream stream(ParseHex(raw_tx), SER_NETWORK, PROTOCOL_VERSION);
-          stream >> tx;
+            uint256 sh;
+            CDataStream stream(ParseHex(raw_tx), SER_NETWORK, PROTOCOL_VERSION);
+            stream >> tx;
 
-          CValidationState state;
-          BOOST_CHECK_MESSAGE(CheckTransaction(*tx, false, state), strTest);
-          BOOST_CHECK(state.IsValid());
+            CValidationState state;
+            BOOST_CHECK_MESSAGE(CheckTransaction(*tx, false, state), strTest);
+            BOOST_CHECK(state.IsValid());
 
-          std::vector<unsigned char> raw = ParseHex(raw_script);
-          scriptCode.insert(scriptCode.end(), raw.begin(), raw.end());
+            std::vector<unsigned char> raw = ParseHex(raw_script);
+            scriptCode.insert(scriptCode.end(), raw.begin(), raw.end());
         } catch (...) {
-          BOOST_ERROR("Bad test, couldn't deserialize data: " << strTest);
-          continue;
+            BOOST_ERROR("Bad test, couldn't deserialize data: " << strTest);
+            continue;
         }
 
         sh = SignatureHash(scriptCode, *tx, nIn, nHashType, 0, tx->GetRequiredSigVersion());
         BOOST_CHECK_MESSAGE(sh.GetHex() == sigHashHex, strTest);
-
     }
 }
 
@@ -260,7 +259,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
         CMutableTransaction _tx;
         RandomTransaction(_tx, false);
         const CTransaction tx(_tx);
-        for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+        for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
             vScriptCode.emplace_back();
             RandomScript(vScriptCode.back());
             vsh.emplace_back(SignatureHash(vScriptCode.back(), tx, nIn, SIGHASH_ALL, 0, tx.GetRequiredSigVersion()));
@@ -268,7 +267,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
 
         // -- create malleated txes
         CMutableTransaction mtx = _tx;
-        for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+        for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
             BOOST_CHECK(vsh[nIn] == SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, tx.GetRequiredSigVersion()));
         }
 
@@ -276,14 +275,14 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
         if (mtx.vin.size() > 0) {
             mtx.vin.pop_back();
             CTransaction tx2(mtx);
-            for (int nIn = 0; nIn < (int) tx.vin.size() - 1; nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size() - 1; nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], tx2, nIn, SIGHASH_ALL, 0, tx2.GetRequiredSigVersion()));
             }
         }
 
         // change the prevout of the transparent input being signed
         mtx = _tx;
-        for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+        for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
             while (mtx.vin[nIn].prevout.hash == tx.vin[nIn].prevout.hash)
                 mtx.vin[nIn].prevout.hash = InsecureRand256();
             CTransaction tx2(mtx);
@@ -298,7 +297,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
             in.nSequence = (InsecureRandBool()) ? InsecureRand32() : (unsigned int)-1;
             mtx.vin.emplace_back(in);
             CTransaction tx2(mtx);
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], tx2, nIn, SIGHASH_ALL, 0, tx2.GetRequiredSigVersion()));
             }
         }
@@ -308,7 +307,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
             // remove one spend
             mtx = _tx;
             mtx.sapData->vShieldedSpend.pop_back();
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
@@ -318,42 +317,42 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
             mtx = _tx;
             while (mtx.sapData->vShieldedSpend[i].cv == tx.sapData->vShieldedSpend[i].cv)
                 mtx.sapData->vShieldedSpend[i].cv = GetRandHash();
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             while (mtx.sapData->vShieldedSpend[i].anchor == tx.sapData->vShieldedSpend[i].anchor)
                 mtx.sapData->vShieldedSpend[i].anchor = GetRandHash();
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             while (mtx.sapData->vShieldedSpend[i].nullifier == tx.sapData->vShieldedSpend[i].nullifier)
                 mtx.sapData->vShieldedSpend[i].nullifier = GetRandHash();
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             while (mtx.sapData->vShieldedSpend[i].rk == tx.sapData->vShieldedSpend[i].rk)
                 mtx.sapData->vShieldedSpend[i].rk = GetRandHash();
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             auto zkproof = &mtx.sapData->vShieldedSpend[i].zkproof;
             randombytes_buf(zkproof->begin(), zkproof->size());
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             auto spendAuthSig = &mtx.sapData->vShieldedSpend[i].spendAuthSig;
             randombytes_buf(spendAuthSig->begin(), spendAuthSig->size());
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
         }
@@ -367,7 +366,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
         sdesc.rk = GetRandHash();
         randombytes_buf(sdesc.zkproof.begin(), sdesc.zkproof.size());
         mtx.sapData->vShieldedSpend.push_back(sdesc);
-        for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+        for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
             BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
         }
 
@@ -377,7 +376,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
             mtx = _tx;
             mtx.vout.pop_back();
             CTransaction tx2(mtx);
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], tx2, nIn, SIGHASH_ALL, 0, tx2.GetRequiredSigVersion()));
             }
 
@@ -387,7 +386,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
             while (mtx.vout[i].nValue == tx.vout[i].nValue)
                 mtx.vout[i].nValue = InsecureRandRange(100000000);
             CTransaction tx3 = CTransaction(mtx);
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], tx3, nIn, SIGHASH_ALL, 0, tx3.GetRequiredSigVersion()));
             }
 
@@ -395,7 +394,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
             while (mtx.vout[i].scriptPubKey == tx.vout[i].scriptPubKey)
                 RandomScript(mtx.vout[i].scriptPubKey);
             CTransaction tx4 = CTransaction(mtx);
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], tx4, nIn, SIGHASH_ALL, 0, tx4.GetRequiredSigVersion()));
             }
         }
@@ -408,7 +407,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
             RandomScript(out.scriptPubKey);
             mtx.vout.emplace_back(out);
             CTransaction tx2(mtx);
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], tx2, nIn, SIGHASH_ALL, 0, tx2.GetRequiredSigVersion()));
             }
         }
@@ -418,7 +417,7 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
             // remove one output
             mtx = _tx;
             mtx.sapData->vShieldedOutput.pop_back();
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
@@ -428,42 +427,42 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
             mtx = _tx;
             while (mtx.sapData->vShieldedOutput[i].cv == tx.sapData->vShieldedOutput[i].cv)
                 mtx.sapData->vShieldedOutput[i].cv = GetRandHash();
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             while (mtx.sapData->vShieldedOutput[i].cmu == tx.sapData->vShieldedOutput[i].cmu)
                 mtx.sapData->vShieldedOutput[i].cmu = GetRandHash();
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             while (mtx.sapData->vShieldedOutput[i].ephemeralKey == tx.sapData->vShieldedOutput[i].ephemeralKey)
                 mtx.sapData->vShieldedOutput[i].ephemeralKey = GetRandHash();
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             auto encCiphertext = &mtx.sapData->vShieldedOutput[i].encCiphertext;
             randombytes_buf(encCiphertext->begin(), encCiphertext->size());
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             auto outCiphertext = &mtx.sapData->vShieldedOutput[i].outCiphertext;
             randombytes_buf(outCiphertext->begin(), outCiphertext->size());
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
 
             mtx = _tx;
             auto zkproof = &mtx.sapData->vShieldedOutput[i].zkproof;
             randombytes_buf(zkproof->begin(), zkproof->size());
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
         }
@@ -478,21 +477,20 @@ BOOST_AUTO_TEST_CASE(malleated_tx)
         randombytes_buf(odesc.outCiphertext.begin(), odesc.outCiphertext.size());
         randombytes_buf(odesc.zkproof.begin(), odesc.zkproof.size());
         mtx.sapData->vShieldedOutput.push_back(odesc);
-        for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+        for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
             BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
         }
 
         // modify the value balance
         if (tx.sapData &&
-                (!tx.sapData->vShieldedOutput.empty() || !tx.sapData->vShieldedSpend.empty())) {
+            (!tx.sapData->vShieldedOutput.empty() || !tx.sapData->vShieldedSpend.empty())) {
             mtx = _tx;
             while (mtx.sapData->valueBalance == tx.sapData->valueBalance)
                 mtx.sapData->valueBalance = InsecureRandRange(100000000);
-            for (int nIn = 0; nIn < (int) tx.vin.size(); nIn++) {
+            for (int nIn = 0; nIn < (int)tx.vin.size(); nIn++) {
                 BOOST_CHECK(vsh[nIn] != SignatureHash(vScriptCode[nIn], CTransaction(mtx), nIn, SIGHASH_ALL, 0, SigVersion::SIGVERSION_SAPLING));
             }
         }
-
     }
 }
 

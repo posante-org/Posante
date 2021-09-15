@@ -1,9 +1,10 @@
 // Copyright (c) 2011-2015 The Bitcoin Core developers
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include "consensus/validation.h"
 #include "pubkey.h"
@@ -29,19 +30,18 @@ BOOST_FIXTURE_TEST_CASE(tx_mempool_block_doublespend, TestChain100Setup)
     // validated going into the memory pool does not allow
     // double-spends in blocks to pass validation when they should not.
 
-    CScript scriptPubKey = CScript() <<  ToByteVector(coinbaseKey.GetPubKey()) << OP_CHECKSIG;
+    CScript scriptPubKey = CScript() << ToByteVector(coinbaseKey.GetPubKey()) << OP_CHECKSIG;
 
     // Create a double-spend of mature coinbase txn:
     std::vector<CMutableTransaction> spends;
     spends.resize(2);
-    for (int i = 0; i < 2; i++)
-    {
+    for (int i = 0; i < 2; i++) {
         spends[i].nVersion = 1;
         spends[i].vin.resize(1);
         spends[i].vin[0].prevout.hash = coinbaseTxns[0].GetHash();
         spends[i].vin[0].prevout.n = 0;
         spends[i].vout.resize(1);
-        spends[i].vout[0].nValue = 11*CENT;
+        spends[i].vout[0].nValue = 11 * CENT;
         spends[i].vout[0].scriptPubKey = scriptPubKey;
 
         // Sign:

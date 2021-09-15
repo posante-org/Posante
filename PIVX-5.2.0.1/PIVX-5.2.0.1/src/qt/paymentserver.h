@@ -6,7 +6,7 @@
 #define BITCOIN_QT_PAYMENTSERVER_H
 
 // This class handles payment requests from clicking on
-// pivx: URIs
+// posante: URIs
 //
 // This is somewhat tricky, because we have to deal with
 // the situation where the user clicks on a link during
@@ -132,7 +132,7 @@ private:
 
     bool saveURIs; // true during startup
     QLocalServer* uriServer;
-    QNetworkAccessManager* netManager;  // Used to fetch payment requests
+    QNetworkAccessManager* netManager; // Used to fetch payment requests
     OptionsModel* optionsModel;
 };
 

@@ -1,8 +1,9 @@
 // Copyright (c) 2018-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "test_pivx.h"
+#include "test_posante.h"
 
 #include "budget/budgetmanager.h"
 #include "tinyformat.h"
@@ -50,12 +51,12 @@ BOOST_AUTO_TEST_CASE(budget_value)
 {
     SelectParams(CBaseChainParams::TESTNET);
     int nHeightTest = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_ZC_V2].nActivationHeight + 1;
-    CheckBudgetValue(nHeightTest-1, "testnet", 7200*COIN);
-    CheckBudgetValue(nHeightTest, "testnet", 144*COIN);
+    CheckBudgetValue(nHeightTest - 1, "testnet", 7200 * COIN);
+    CheckBudgetValue(nHeightTest, "testnet", 144 * COIN);
 
     SelectParams(CBaseChainParams::MAIN);
     nHeightTest = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_ZC_V2].nActivationHeight + 1;
-    CheckBudgetValue(nHeightTest, "mainnet", 43200*COIN);
+    CheckBudgetValue(nHeightTest, "mainnet", 43200 * COIN);
 }
 
 BOOST_AUTO_TEST_CASE(block_value)
@@ -67,9 +68,9 @@ BOOST_AUTO_TEST_CASE(block_value)
     // regular block
     int nHeight = 100;
     CAmount nExpected = GetBlockValue(nHeight);
-    BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected-1));
+    BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected - 1));
     BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected));
-    BOOST_CHECK(!t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected+1));
+    BOOST_CHECK(!t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected + 1));
 
     // superblock - create the finalized budget with a proposal, and vote on it
     nHeight = 144;
@@ -77,7 +78,7 @@ BOOST_AUTO_TEST_CASE(block_value)
     const CTxIn mnVin(GetRandHash(), 0);
     const CScript payee = GetScriptForDestination(CKeyID(uint160(ParseHex("816115944e077fe7c803cfa57f29b36bf87c1d35"))));
     const CAmount propAmt = 100 * COIN;
-    const uint256& propHash = GetRandHash(), finTxId = GetRandHash();
+    const uint256 &propHash = GetRandHash(), finTxId = GetRandHash();
     const CTxBudgetPayment txBudgetPayment(propHash, payee, propAmt);
     CFinalizedBudget fin("main (test)", 144, {txBudgetPayment}, finTxId);
     const CFinalizedBudgetVote fvote(mnVin, fin.GetHash());
@@ -86,16 +87,16 @@ BOOST_AUTO_TEST_CASE(block_value)
 
     // check superblock's block-value
     BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected));
-    BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected+propAmt-1));
-    BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected+propAmt));
-    BOOST_CHECK(!t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected+propAmt+1));
+    BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected + propAmt - 1));
+    BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected + propAmt));
+    BOOST_CHECK(!t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected + propAmt + 1));
 
     // check with spork disabled
     nExpected = GetBlockValue(nHeight);
-    BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected-1, false));
+    BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected - 1, false));
     BOOST_CHECK(t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected, false));
-    BOOST_CHECK(!t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected+1, false));
-    BOOST_CHECK(!t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected+propAmt, false));
+    BOOST_CHECK(!t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected + 1, false));
+    BOOST_CHECK(!t_budgetman.IsBlockValueValid(nHeight, nExpected, nExpected + propAmt, false));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

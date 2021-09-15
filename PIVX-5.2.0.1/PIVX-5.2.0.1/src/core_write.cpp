@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,15 +8,15 @@
 
 #include "base58.h"
 #include "primitives/transaction.h"
+#include "sapling/sapling_core_write.h"
 #include "script/script.h"
 #include "script/standard.h"
-#include "sapling/sapling_core_write.h"
 #include "serialize.h"
 #include "streams.h"
-#include <univalue.h>
 #include "util.h"
 #include "utilmoneystr.h"
 #include "utilstrencodings.h"
+#include <univalue.h>
 
 std::string FormatScript(const CScript& script)
 {
@@ -58,8 +59,7 @@ const std::map<unsigned char, std::string> mapSigHashTypes = {
     {static_cast<unsigned char>(SIGHASH_NONE), std::string("NONE")},
     {static_cast<unsigned char>(SIGHASH_NONE | SIGHASH_ANYONECANPAY), std::string("NONE|ANYONECANPAY")},
     {static_cast<unsigned char>(SIGHASH_SINGLE), std::string("SINGLE")},
-    {static_cast<unsigned char>(SIGHASH_SINGLE | SIGHASH_ANYONECANPAY), std::string("SINGLE|ANYONECANPAY")}
-};
+    {static_cast<unsigned char>(SIGHASH_SINGLE | SIGHASH_ANYONECANPAY), std::string("SINGLE|ANYONECANPAY")}};
 
 /**
  * Create the assembly string representation of a CScript object.
@@ -132,11 +132,7 @@ void ScriptPubKeyToUniv(const CScript& scriptPubKey,
         out.pushKV("hex", HexStr(scriptPubKey.begin(), scriptPubKey.end()));
 
     if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired)) {
-        if (!scriptPubKey.empty() && scriptPubKey.IsZerocoinMint()) {
-            out.pushKV("type", "zerocoinmint"); // unsupported type.
-        } else {
-            out.pushKV("type", GetTxnOutputType(type));
-        }
+        out.pushKV("type", GetTxnOutputType(type));
         return;
     }
 

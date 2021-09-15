@@ -1,0 +1,8 @@
+/usr/bin/posante-cli		--	gen_context(system_u:object_r:posante_exec_t,s0)
+/usr/sbin/posanted		--	gen_context(system_u:object_r:posante_exec_t,s0)
+/usr/lib(64)?/posante/posanted		--	gen_context(system_u:object_r:posante_exec_t,s0)
+
+/etc/posante(/.*)?		gen_context(system_u:object_r:posante_conf_t,s0)
+/var/lib/posante(/.*)?		gen_context(system_u:object_r:posante_var_lib_t,s0)
+
+(/var)?/run/posanted(/.*)?   gen_context(system_u:object_r:posante_var_run_t,s0)

@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,10 +10,10 @@
 
 #include "base58.h"
 #include "fs.h"
+#include "guiinterface.h"
 #include "init.h"
 #include "random.h"
 #include "sync.h"
-#include "guiinterface.h"
 #include "util.h"
 #include "utilstrencodings.h"
 
@@ -35,33 +36,32 @@ static RecursiveMutex cs_rpcWarmup;
 /* Timer-creating functions */
 static RPCTimerInterface* timerInterface = NULL;
 /* Map of name to timer. */
-static std::map<std::string, std::unique_ptr<RPCTimerBase>> deadlineTimers;
+static std::map<std::string, std::unique_ptr<RPCTimerBase> > deadlineTimers;
 
-static struct CRPCSignals
-{
-    boost::signals2::signal<void ()> Started;
-    boost::signals2::signal<void ()> Stopped;
-    boost::signals2::signal<void (const CRPCCommand&)> PreCommand;
+static struct CRPCSignals {
+    boost::signals2::signal<void()> Started;
+    boost::signals2::signal<void()> Stopped;
+    boost::signals2::signal<void(const CRPCCommand&)> PreCommand;
 } g_rpcSignals;
 
-void RPCServer::OnStarted(std::function<void ()> slot)
+void RPCServer::OnStarted(std::function<void()> slot)
 {
     g_rpcSignals.Started.connect(slot);
 }
 
-void RPCServer::OnStopped(std::function<void ()> slot)
+void RPCServer::OnStopped(std::function<void()> slot)
 {
     g_rpcSignals.Stopped.connect(slot);
 }
 
-void RPCServer::OnPreCommand(std::function<void (const CRPCCommand&)> slot)
+void RPCServer::OnPreCommand(std::function<void(const CRPCCommand&)> slot)
 {
     g_rpcSignals.PreCommand.connect(std::bind(slot, std::placeholders::_1));
 }
 
 void RPCTypeCheck(const UniValue& params,
-                  const std::list<UniValue::VType>& typesExpected,
-                  bool fAllowNull)
+    const std::list<UniValue::VType>& typesExpected,
+    bool fAllowNull)
 {
     unsigned int i = 0;
     for (UniValue::VType t : typesExpected) {
@@ -71,7 +71,7 @@ void RPCTypeCheck(const UniValue& params,
         const UniValue& v = params[i];
         if (!((v.type() == t) || (fAllowNull && (v.isNull())))) {
             std::string err = strprintf("Expected type %s, got %s",
-                                   uvTypeName(t), uvTypeName(v.type()));
+                uvTypeName(t), uvTypeName(v.type()));
             throw JSONRPCError(RPC_TYPE_ERROR, err);
         }
         i++;
@@ -90,7 +90,7 @@ void RPCTypeCheckObj(const UniValue& o,
 
         if (!(t.second.typeAny || v.type() == t.second.type || (fAllowNull && v.isNull()))) {
             std::string err = strprintf("Expected type %s for %s, got %s",
-                                        uvTypeName(t.second.type), t.first, uvTypeName(v.type()));
+                uvTypeName(t.second.type), t.first, uvTypeName(v.type()));
             throw JSONRPCError(RPC_TYPE_ERROR, err);
         }
     }
@@ -108,9 +108,9 @@ void RPCTypeCheckObj(const UniValue& o,
 CAmount AmountFromValue(const UniValue& value)
 {
     if (!value.isNum() && !value.isStr())
-        throw JSONRPCError(RPC_TYPE_ERROR,"Amount is not a number or string");
+        throw JSONRPCError(RPC_TYPE_ERROR, "Amount is not a number or string");
     CAmount nAmount;
-    if (!ParseFixedPoint(value.getValStr(), 8, &nAmount))
+    if (!ParseFixedPoint(value.getValStr(), 6, &nAmount))
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
     if (!Params().GetConsensus().MoneyRange(nAmount))
         throw JSONRPCError(RPC_TYPE_ERROR, "Amount out of range");
@@ -124,7 +124,7 @@ UniValue ValueFromAmount(const CAmount& amount)
     int64_t quotient = n_abs / COIN;
     int64_t remainder = n_abs % COIN;
     return UniValue(UniValue::VNUM,
-            strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder));
+        strprintf("%s%d.%06d", sign ? "-" : "", quotient, remainder));
 }
 
 uint256 ParseHashV(const UniValue& v, std::string strName)
@@ -251,11 +251,11 @@ UniValue stop(const JSONRPCRequest& jsonRequest)
     if (jsonRequest.fHelp || jsonRequest.params.size() > 1)
         throw std::runtime_error(
             "stop\n"
-            "\nStop PIVX server.");
+            "\nStop Posante server.");
     // Event loop will exit after current HTTP requests have been handled, so
     // this reply will get back to the client.
     StartShutdown();
-    return "PIVX server stopping";
+    return "Posante server stopping";
 }
 
 
@@ -268,8 +268,8 @@ static const CRPCCommand vRPCCommands[] =
         //  --------------------- ------------------------  -----------------------  ----------
         /* Overall control/query calls */
 
-        {"control", "help", &help, true },
-        {"control", "stop", &stop, true },
+        {"control", "help", &help, true},
+        {"control", "stop", &stop, true},
 };
 
 CRPCTable::CRPCTable()
@@ -283,7 +283,7 @@ CRPCTable::CRPCTable()
     }
 }
 
-const CRPCCommand *CRPCTable::operator[](const std::string &name) const
+const CRPCCommand* CRPCTable::operator[](const std::string& name) const
 {
     std::map<std::string, const CRPCCommand*>::const_iterator it = mapCommands.find(name);
     if (it == mapCommands.end())
@@ -419,7 +419,7 @@ std::string JSONRPCExecBatch(const UniValue& vReq)
     return ret.write() + "\n";
 }
 
-UniValue CRPCTable::execute(const JSONRPCRequest &request) const
+UniValue CRPCTable::execute(const JSONRPCRequest& request) const
 {
     // Return immediately if in warmup
     std::string strWarmupStatus;
@@ -445,34 +445,35 @@ UniValue CRPCTable::execute(const JSONRPCRequest &request) const
 std::vector<std::string> CRPCTable::listCommands() const
 {
     std::vector<std::string> commandList;
-    for (const auto& i : mapCommands) commandList.emplace_back(i.first);
+    for (const auto& i : mapCommands)
+        commandList.emplace_back(i.first);
     return commandList;
 }
 
 std::string HelpExampleCli(std::string methodname, std::string args)
 {
-    return "> pivx-cli " + methodname + " " + args + "\n";
+    return "> posante-cli " + methodname + " " + args + "\n";
 }
 
 std::string HelpExampleRpc(std::string methodname, std::string args)
 {
     return "> curl --user myusername --data-binary '{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", "
            "\"method\": \"" +
-           methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:51473/\n";
+           methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:2682/\n";
 }
 
-void RPCSetTimerInterfaceIfUnset(RPCTimerInterface *iface)
+void RPCSetTimerInterfaceIfUnset(RPCTimerInterface* iface)
 {
     if (!timerInterface)
         timerInterface = iface;
 }
 
-void RPCSetTimerInterface(RPCTimerInterface *iface)
+void RPCSetTimerInterface(RPCTimerInterface* iface)
 {
     timerInterface = iface;
 }
 
-void RPCUnsetTimerInterface(RPCTimerInterface *iface)
+void RPCUnsetTimerInterface(RPCTimerInterface* iface)
 {
     if (timerInterface == iface)
         timerInterface = NULL;
@@ -484,7 +485,7 @@ void RPCRunLater(const std::string& name, std::function<void(void)> func, int64_
         throw JSONRPCError(RPC_INTERNAL_ERROR, "No timer handler registered for RPC");
     deadlineTimers.erase(name);
     LogPrint(BCLog::RPC, "queue run of timer %s in %i seconds (using %s)\n", name, nSeconds, timerInterface->Name());
-    deadlineTimers.emplace(name, std::unique_ptr<RPCTimerBase>(timerInterface->NewTimer(func, nSeconds*1000)));
+    deadlineTimers.emplace(name, std::unique_ptr<RPCTimerBase>(timerInterface->NewTimer(func, nSeconds * 1000)));
 }
 
 CRPCTable tableRPC;

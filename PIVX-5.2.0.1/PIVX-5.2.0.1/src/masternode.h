@@ -1,5 +1,6 @@
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -19,7 +20,7 @@
 static const unsigned int MNPING_DEPTH = 12;
 
 /* Masternode collateral amount */
-static const CAmount MN_COLL_AMT = 10000 * COIN;
+static const CAmount MN_COLL_AMT = 10000000 * COIN;
 
 
 class CMasternode;
@@ -56,8 +57,7 @@ public:
         READWRITE(blockHash);
         READWRITE(sigTime);
         READWRITE(vchSig);
-        try
-        {
+        try {
             READWRITE(nMessVersion);
         } catch (...) {
             nMessVersion = MessageVersion::MESS_VER_STRMESS;
@@ -88,7 +88,7 @@ public:
 };
 
 //
-// The Masternode Class. It contains the input of the 10000 PIV, signature to prove
+// The Masternode Class. It contains the input of the 10000 POSA, signature to prove
 // it's the one who own that ip address and code for calculating the payment election.
 //
 class CMasternode : public CSignedMessage
@@ -174,7 +174,8 @@ public:
     }
 
     template <typename Stream>
-    CMasternode(deserialize_type, Stream& s) {
+    CMasternode(deserialize_type, Stream& s)
+    {
         Unserialize(s);
     }
 
@@ -222,16 +223,16 @@ public:
     {
         auto activeState = GetActiveState();
         if (activeState == CMasternode::MASTERNODE_PRE_ENABLED) return "PRE_ENABLED";
-        if (activeState == CMasternode::MASTERNODE_ENABLED)     return "ENABLED";
-        if (activeState == CMasternode::MASTERNODE_EXPIRED)     return "EXPIRED";
-        if (activeState == CMasternode::MASTERNODE_VIN_SPENT)   return "VIN_SPENT";
-        if (activeState == CMasternode::MASTERNODE_REMOVE)      return "REMOVE";
+        if (activeState == CMasternode::MASTERNODE_ENABLED) return "ENABLED";
+        if (activeState == CMasternode::MASTERNODE_EXPIRED) return "EXPIRED";
+        if (activeState == CMasternode::MASTERNODE_VIN_SPENT) return "VIN_SPENT";
+        if (activeState == CMasternode::MASTERNODE_REMOVE) return "REMOVE";
         return strprintf("INVALID_%d", activeState);
     }
 
     bool IsValidNetAddr() const;
 
-    /// Is the input associated with collateral public key? (and there is 10000 PIV - checking if valid masternode)
+    /// Is the input associated with collateral public key? (and there is 10000 POSA - checking if valid masternode)
     bool IsInputAssociatedWithPubkey() const;
 };
 

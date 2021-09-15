@@ -1,5 +1,6 @@
 // Copyright (c) 2014 The Bitcoin developers
 // Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,8 +12,8 @@
 #include <vector>
 
 /**
- * CBaseChainParams defines the base parameters (shared between pivx-cli and pivxd)
- * of a given instance of the Pivx system.
+ * CBaseChainParams defines the base parameters (shared between posante-cli and posanted)
+ * of a given instance of the Posante system.
  */
 class CBaseChainParams
 {
@@ -43,7 +44,7 @@ std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string& chain
  * Append the help messages for the chainparams options to the
  * parameter string.
  */
-void AppendParamsHelpMessages(std::string& strUsage, bool debugHelp=true);
+void AppendParamsHelpMessages(std::string& strUsage, bool debugHelp = true);
 
 /**
  * Return the currently selected parameters. This won't change after app startup

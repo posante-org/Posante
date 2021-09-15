@@ -6,7 +6,7 @@
 #define BITCOIN_NETADDRESS_H
 
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
 #include "compat.h"
@@ -30,7 +30,7 @@ class CNetAddr
 {
 protected:
     unsigned char ip[16]; // in network byte order
-    uint32_t scopeId{0};     // for scoped/link-local ipv6 addresses
+    uint32_t scopeId{0};  // for scoped/link-local ipv6 addresses
 
 public:
     CNetAddr();

@@ -1,11 +1,12 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
 #include "optionsmodel.h"
@@ -178,7 +179,7 @@ void OptionsModel::setWindowDefaultOptions(QSettings& settings, bool reset)
 void OptionsModel::setDisplayDefaultOptions(QSettings& settings, bool reset)
 {
     if (!settings.contains("nDisplayUnit") || reset)
-        settings.setValue("nDisplayUnit", BitcoinUnits::PIV);
+        settings.setValue("nDisplayUnit", BitcoinUnits::POSA);
     nDisplayUnit = settings.value("nDisplayUnit").toInt();
     if (!settings.contains("digits") || reset)
         settings.setValue("digits", "2");
@@ -190,9 +191,6 @@ void OptionsModel::setDisplayDefaultOptions(QSettings& settings, bool reset)
         settings.setValue("language", "");
     if (!gArgs.SoftSetArg("-lang", settings.value("language").toString().toStdString()))
         addOverriddenOption("-lang");
-
-    if (settings.contains("nAnonymizePivxAmount") || reset)
-        gArgs.SoftSetArg("-anonymizepivxamount", settings.value("nAnonymizePivxAmount").toString().toStdString());
 
     if (!settings.contains("strThirdPartyTxUrls") || reset)
         settings.setValue("strThirdPartyTxUrls", "");
@@ -211,7 +209,7 @@ void OptionsModel::Reset()
 
     // Remove all entries from our QSettings object
     settings.clear();
-    resetSettings = true; // Needed in pivx.cpp during shotdown to also remove the window positions
+    resetSettings = true; // Needed in posante.cpp during shotdown to also remove the window positions
 
     // default setting for OptionsModel::StartAtStartup - disabled
     if (GUIUtil::GetStartOnSystemStartup())
@@ -260,9 +258,8 @@ QVariant OptionsModel::data(const QModelIndex& index, int role) const
         case SpendZeroConfChange:
             return settings.value("bSpendZeroConfChange");
         case ShowMasternodesTab:
-            return settings.value("fShowMasternodesTab");
-        case StakeSplitThreshold:
-        {
+            return settings.value("fShowCommunitynodesTab");
+        case StakeSplitThreshold: {
             // Return CAmount/qlonglong as double
             const CAmount nStakeSplitThreshold = (pwalletMain) ? pwalletMain->nStakeSplitThreshold : CWallet::DEFAULT_STAKE_SPLIT_THRESHOLD;
             return QVariant(static_cast<double>(nStakeSplitThreshold / static_cast<double>(COIN)));
@@ -370,8 +367,8 @@ bool OptionsModel::setData(const QModelIndex& index, const QVariant& value, int 
             }
             break;
         case ShowMasternodesTab:
-            if (settings.value("fShowMasternodesTab") != value) {
-                settings.setValue("fShowMasternodesTab", value);
+            if (settings.value("fShowCommunitynodesTab") != value) {
+                settings.setValue("fShowCommunitynodesTab", value);
                 setRestartRequired(true);
             }
             break;
@@ -416,7 +413,7 @@ bool OptionsModel::setData(const QModelIndex& index, const QVariant& value, int 
             }
             break;
         case HideCharts:
-            fHideCharts = value.toBool();   // memory only
+            fHideCharts = value.toBool(); // memory only
             Q_EMIT hideChartsChanged(fHideCharts);
             break;
         case HideZeroBalances:
@@ -501,7 +498,7 @@ double OptionsModel::getSSTMinimum() const
 bool OptionsModel::isSSTValid()
 {
     if (pwalletMain && pwalletMain->nStakeSplitThreshold &&
-            pwalletMain->nStakeSplitThreshold < CWallet::minStakeSplitThreshold) {
+        pwalletMain->nStakeSplitThreshold < CWallet::minStakeSplitThreshold) {
         setStakeSplitThreshold(CWallet::minStakeSplitThreshold);
         return false;
     }

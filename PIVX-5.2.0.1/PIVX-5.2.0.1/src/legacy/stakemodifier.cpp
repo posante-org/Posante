@@ -2,11 +2,12 @@
 // Copyright (c) 2013-2014 The NovaCoin Developers
 // Copyright (c) 2014-2018 The BlackCoin Developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "legacy/stakemodifier.h"
-#include "validation.h"   // mapBlockIndex, chainActive
+#include "validation.h" // mapBlockIndex, chainActive
 
 /*
  * Old Modifier - Only for IBD
@@ -20,7 +21,7 @@ static const int64_t OLD_MODIFIER_INTERVAL = 2087;
 static int64_t GetStakeModifierSelectionIntervalSection(int nSection)
 {
     assert(nSection >= 0 && nSection < 64);
-    int64_t a = MODIFIER_INTERVAL  * 63 / (63 + ((63 - nSection) * (MODIFIER_INTERVAL_RATIO - 1)));
+    int64_t a = MODIFIER_INTERVAL * 63 / (63 + ((63 - nSection) * (MODIFIER_INTERVAL_RATIO - 1)));
     return a;
 }
 
@@ -48,7 +49,7 @@ static bool SelectBlockFromCandidates(
             break;
 
         //if the lowest block height (vSortedByTimestamp[0]) is >= switch height, use new modifier calc
-        if (fFirstRun){
+        if (fFirstRun) {
             fModifierV2 = Params().GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_POS_V2);
             fFirstRun = false;
         }
@@ -58,7 +59,7 @@ static bool SelectBlockFromCandidates(
 
         // compute the selection hash by hashing an input that is unique to that block
         uint256 hashProof;
-        if(fModifierV2)
+        if (fModifierV2)
             hashProof = pindex->GetBlockHash();
         else
             hashProof = pindex->IsProofOfStake() ? UINT256_ZERO : pindex->GetBlockHash();
@@ -114,19 +115,7 @@ bool GetOldStakeModifier(CStakeInput* stake, uint64_t& nStakeModifier)
 {
     const CBlockIndex* pindexFrom = stake->GetIndexFrom();
     if (!pindexFrom) return error("%s : failed to get index from", __func__);
-    if (stake->IsZPIV()) {
-        int64_t nTimeBlockFrom = pindexFrom->GetBlockTime();
-        const int nHeightStop = std::min(chainActive.Height(), Params().GetConsensus().height_last_ZC_AccumCheckpoint-1);
-        while (pindexFrom && pindexFrom->nHeight + 1 <= nHeightStop) {
-            if (pindexFrom->GetBlockTime() - nTimeBlockFrom > 60 * 60) {
-                nStakeModifier = pindexFrom->nAccumulatorCheckpoint.GetCheapHash();
-                return true;
-            }
-            pindexFrom = chainActive.Next(pindexFrom);
-        }
-        return false;
-
-    } else if (!GetOldModifier(pindexFrom, nStakeModifier))
+    if (!GetOldModifier(pindexFrom, nStakeModifier))
         return error("%s : failed to get kernel stake modifier", __func__);
 
     return true;
@@ -165,7 +154,8 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexPrev, uint64_t& nStakeMod
     // if it's not old enough, return the same stake modifier
     int64_t nModifierTime = 0;
     const CBlockIndex* p = pindexPrev;
-    while (p && p->pprev && !p->GeneratedStakeModifier()) p = p->pprev;
+    while (p && p->pprev && !p->GeneratedStakeModifier())
+        p = p->pprev;
     if (!p->GeneratedStakeModifier()) return error("%s : unable to get last modifier", __func__);
     nStakeModifier = p->GetStakeModifierV1();
     nModifierTime = p->GetBlockTime();
@@ -178,8 +168,8 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexPrev, uint64_t& nStakeMod
 
     // Sort candidate blocks by timestamp
     std::vector<std::pair<int64_t, uint256> > vSortedByTimestamp;
-    vSortedByTimestamp.reserve(64 * MODIFIER_INTERVAL  / Params().GetConsensus().nTargetSpacing);
-    int64_t nSelectionIntervalStart = (pindexPrev->GetBlockTime() / MODIFIER_INTERVAL ) * MODIFIER_INTERVAL  - OLD_MODIFIER_INTERVAL;
+    vSortedByTimestamp.reserve(64 * MODIFIER_INTERVAL / Params().GetConsensus().nTargetSpacing);
+    int64_t nSelectionIntervalStart = (pindexPrev->GetBlockTime() / MODIFIER_INTERVAL) * MODIFIER_INTERVAL - OLD_MODIFIER_INTERVAL;
     const CBlockIndex* pindex = pindexPrev;
 
     while (pindex && pindex->GetBlockTime() >= nSelectionIntervalStart) {
@@ -225,7 +215,7 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexPrev, uint64_t& nStakeMod
                 strSelectionMap.replace(pindex->nHeight - nHeightFirstCandidate, 1, "=");
             pindex = pindex->pprev;
         }
-        for (const std::pair<const uint256, const CBlockIndex*> &item : mapSelectedBlocks) {
+        for (const std::pair<const uint256, const CBlockIndex*>& item : mapSelectedBlocks) {
             // 'S' indicates selected proof-of-stake blocks
             // 'W' indicates selected proof-of-work blocks
             strSelectionMap.replace(item.second->nHeight - nHeightFirstCandidate, 1, item.second->IsProofOfStake() ? "S" : "W");

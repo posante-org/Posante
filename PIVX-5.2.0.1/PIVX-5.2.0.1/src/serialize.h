@@ -1,11 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2015-2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef PIVX_SERIALIZE_H
-#define PIVX_SERIALIZE_H
+#ifndef Posante_SERIALIZE_H
+#define Posante_SERIALIZE_H
 
 #include <algorithm>
 #include <array>
@@ -23,8 +24,6 @@
 #include <vector>
 
 #include "compat/endian.h"
-#include "libzerocoin/Denominations.h"
-#include "libzerocoin/SpendType.h"
 #include "optional.h"
 #include "prevector.h"
 #include "sporkid.h"
@@ -234,36 +233,6 @@ template<typename Stream> inline void Unserialize(Stream& s, double& a  ) { a = 
 
 template<typename Stream> inline void Serialize(Stream& s, bool a)    { char f=a; ser_writedata8(s, f); }
 template<typename Stream> inline void Unserialize(Stream& s, bool& a) { char f=ser_readdata8(s); a=f; }
-
-// Serializatin for libzerocoin::CoinDenomination
-template <typename Stream>
-inline void Serialize(Stream& s, libzerocoin::CoinDenomination a)
-{
-    int f = libzerocoin::ZerocoinDenominationToInt(a);
-    ser_writedata32(s, f);
-}
-
-template <typename Stream>
-inline void Unserialize(Stream& s, libzerocoin::CoinDenomination& a)
-{
-    int f = ser_readdata32(s);
-    a = libzerocoin::IntToZerocoinDenomination(f);
-}
-
-// Serialization for libzerocoin::SpendType
-template <typename Stream>
-inline void Serialize(Stream& s, libzerocoin::SpendType a)
-{
-    uint8_t f = static_cast<uint8_t>(a);
-    ser_writedata8(s, f);
-}
-
-template <typename Stream>
-inline void Unserialize(Stream& s, libzerocoin::SpendType & a)
-{
-    uint8_t f = ser_readdata8(s);
-    a = static_cast<libzerocoin::SpendType>(f);
-}
 
 // Serialization for SporkId
 template <typename Stream>
@@ -1158,4 +1127,4 @@ size_t GetSerializeSize(const S& s, const T& t)
     return (CSizeComputer(s.GetType(), s.GetVersion()) << t).size();
 }
 
-#endif // PIVX_SERIALIZE_H
+#endif // Posante_SERIALIZE_H

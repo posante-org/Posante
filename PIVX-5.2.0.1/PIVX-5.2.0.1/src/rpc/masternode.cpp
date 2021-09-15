@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -23,7 +24,7 @@ UniValue mnping(const JSONRPCRequest& request)
     if (request.fHelp || !request.params.empty()) {
         throw std::runtime_error(
             "mnping \n"
-            "\nSend masternode ping. Only for remote masternodes on Regtest\n"
+            "\nSend communitynode ping. Only for remote communitynode on Regtest\n"
 
             "\nResult:\n"
             "{\n"
@@ -39,7 +40,7 @@ UniValue mnping(const JSONRPCRequest& request)
     }
 
     if (!fMasterNode) {
-        throw JSONRPCError(RPC_MISC_ERROR, "this is not a masternode");
+        throw JSONRPCError(RPC_MISC_ERROR, "this is not a communitynode");
     }
 
     UniValue ret(UniValue::VOBJ);
@@ -53,18 +54,18 @@ UniValue initmasternode(const JSONRPCRequest& request)
 {
     if (request.fHelp || (request.params.empty() || request.params.size() > 2)) {
         throw std::runtime_error(
-                "initmasternode ( \"masternodePrivKey\" \"masternodeAddr\" )\n"
-                "\nInitialize masternode on demand if it's not already initialized.\n"
+                "initcommunitynode ( \"communitynodePrivKey\" \"communitynodeAddr\" )\n"
+                "\nInitialize communitynode on demand if it's not already initialized.\n"
                 "\nArguments:\n"
-                "1. masternodePrivKey          (string, required) The masternode private key.\n"
-                "2. masternodeAddr             (string, required) The IP:Port of this masternode.\n"
+                "1. communitynodePrivKey          (string, required) The communitynode private key.\n"
+                "2. communitynodeAddr             (string, required) The IP:Port of this communitynode.\n"
 
                 "\nResult:\n"
-                " success                      (string) if the masternode initialization succeeded.\n"
+                " success                      (string) if the communitynode initialization succeeded.\n"
 
                 "\nExamples:\n" +
-                HelpExampleCli("initmasternode", "\"9247iC59poZmqBYt9iDh9wDam6v9S1rW5XekjLGyPnDhrDkP4AK\" \"187.24.32.124:51472\"") +
-                HelpExampleRpc("initmasternode", "\"9247iC59poZmqBYt9iDh9wDam6v9S1rW5XekjLGyPnDhrDkP4AK\" \"187.24.32.124:51472\""));
+                HelpExampleCli("initcommunitynode", "\"9247iC59poZmqBYt9iDh9wDam6v9S1rW5XekjLGyPnDhrDkP4AK\" \"187.24.32.124:2681\"") +
+                HelpExampleRpc("initcommunitynode", "\"9247iC59poZmqBYt9iDh9wDam6v9S1rW5XekjLGyPnDhrDkP4AK\" \"187.24.32.124:2681\""));
     }
 
     std::string _strMasterNodePrivKey = request.params[0].get_str();
@@ -79,7 +80,7 @@ UniValue getcachedblockhashes(const JSONRPCRequest& request)
     if (request.fHelp || request.params.size() > 0)
         throw std::runtime_error(
             "getcachedblockhashes \n"
-            "\nReturn the block hashes cached in the masternode manager\n"
+            "\nReturn the block hashes cached in the communitynode manager\n"
 
             "\nResult:\n"
             "[\n"
@@ -107,8 +108,8 @@ UniValue listmasternodes(const JSONRPCRequest& request)
 
     if (request.fHelp || (request.params.size() > 1))
         throw std::runtime_error(
-            "listmasternodes ( \"filter\" )\n"
-            "\nGet a ranked list of masternodes\n"
+            "listcommunitynodes ( \"filter\" )\n"
+            "\nGet a ranked list of communitynodes\n"
 
             "\nArguments:\n"
             "1. \"filter\"    (string, optional) Filter search text. Partial match by txhash, status, or addr.\n"
@@ -116,22 +117,22 @@ UniValue listmasternodes(const JSONRPCRequest& request)
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"rank\": n,           (numeric) Masternode Rank (or 0 if not enabled)\n"
+            "    \"rank\": n,           (numeric) Communitynode Rank (or 0 if not enabled)\n"
             "    \"txhash\": \"hash\",    (string) Collateral transaction hash\n"
             "    \"outidx\": n,         (numeric) Collateral transaction output index\n"
-            "    \"pubkey\": \"key\",   (string) Masternode public key used for message broadcasting\n"
+            "    \"pubkey\": \"key\",   (string) Communitynode public key used for message broadcasting\n"
             "    \"status\": s,         (string) Status (ENABLED/EXPIRED/REMOVE/etc)\n"
-            "    \"addr\": \"addr\",      (string) Masternode PIVX address\n"
-            "    \"version\": v,        (numeric) Masternode protocol version\n"
+            "    \"addr\": \"addr\",      (string) Communitynode Posante address\n"
+            "    \"version\": v,        (numeric) Communitynode protocol version\n"
             "    \"lastseen\": ttt,     (numeric) The time in seconds since epoch (Jan 1 1970 GMT) of the last seen\n"
-            "    \"activetime\": ttt,   (numeric) The time in seconds since epoch (Jan 1 1970 GMT) masternode has been active\n"
-            "    \"lastpaid\": ttt,     (numeric) The time in seconds since epoch (Jan 1 1970 GMT) masternode was last paid\n"
+            "    \"activetime\": ttt,   (numeric) The time in seconds since epoch (Jan 1 1970 GMT) communitynode has been active\n"
+            "    \"lastpaid\": ttt,     (numeric) The time in seconds since epoch (Jan 1 1970 GMT) communitynode was last paid\n"
             "  }\n"
             "  ,...\n"
             "]\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("listmasternodes", "") + HelpExampleRpc("listmasternodes", ""));
+            HelpExampleCli("listcommunitynodes", "") + HelpExampleRpc("listcommunitynodes", ""));
 
     UniValue ret(UniValue::VARR);
     const CBlockIndex* chainTip = GetChainTip();
@@ -182,22 +183,22 @@ UniValue getmasternodecount (const JSONRPCRequest& request)
 {
     if (request.fHelp || (request.params.size() > 0))
         throw std::runtime_error(
-            "getmasternodecount\n"
-            "\nGet masternode count values\n"
+            "getcommunitynodecount\n"
+            "\nGet communitynode count values\n"
 
             "\nResult:\n"
             "{\n"
-            "  \"total\": n,        (numeric) Total masternodes\n"
+            "  \"total\": n,        (numeric) Total communitynodes\n"
             "  \"stable\": n,       (numeric) Stable count\n"
-            "  \"enabled\": n,      (numeric) Enabled masternodes\n"
-            "  \"inqueue\": n,      (numeric) Masternodes in queue\n"
-            "  \"ipv4\": n,         (numeric) Number of IPv4 masternodes\n"
-            "  \"ipv6\": n,         (numeric) Number of IPv6 masternodes\n"
-            "  \"onion\": n         (numeric) Number of Tor masternodes\n"
+            "  \"enabled\": n,      (numeric) Enabled communitynodes\n"
+            "  \"inqueue\": n,      (numeric) Communitynodes in queue\n"
+            "  \"ipv4\": n,         (numeric) Number of IPv4 communitynodes\n"
+            "  \"ipv6\": n,         (numeric) Number of IPv6 communitynodes\n"
+            "  \"onion\": n         (numeric) Number of Tor communitynodes\n"
             "}\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("getmasternodecount", "") + HelpExampleRpc("getmasternodecount", ""));
+            HelpExampleCli("getcommunitynodecount", "") + HelpExampleRpc("getcommunitynodecount", ""));
 
     UniValue obj(UniValue::VOBJ);
     int nCount = 0;
@@ -224,8 +225,8 @@ UniValue masternodecurrent (const JSONRPCRequest& request)
 {
     if (request.fHelp || (request.params.size() != 0))
         throw std::runtime_error(
-            "masternodecurrent\n"
-            "\nGet current masternode winner (scheduled to be paid next).\n"
+            "communitynodecurrent\n"
+            "\nGet current communitynode winner (scheduled to be paid next).\n"
 
             "\nResult:\n"
             "{\n"
@@ -237,7 +238,7 @@ UniValue masternodecurrent (const JSONRPCRequest& request)
             "}\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("masternodecurrent", "") + HelpExampleRpc("masternodecurrent", ""));
+            HelpExampleCli("communitynodecurrent", "") + HelpExampleRpc("communitynodecurrent", ""));
 
     const CBlockIndex* pChainTip = GetChainTip();
     if (!pChainTip) return "unknown";
@@ -334,17 +335,17 @@ UniValue startmasternode (const JSONRPCRequest& request)
         (request.params.size() == 2 && (strCommand != "local" && strCommand != "all" && strCommand != "many" && strCommand != "missing" && strCommand != "disabled")) ||
         ( (request.params.size() == 3 || request.params.size() == 4) && strCommand != "alias"))
         throw std::runtime_error(
-            "startmasternode \"local|all|many|missing|disabled|alias\" lockwallet ( \"alias\" reload_conf )\n"
-            "\nAttempts to start one or more masternode(s)\n"
+            "startcommunitynode \"local|all|many|missing|disabled|alias\" lockwallet ( \"alias\" reload_conf )\n"
+            "\nAttempts to start one or more communitynode(s)\n"
 
             "\nArguments:\n"
-            "1. set         (string, required) Specify which set of masternode(s) to start.\n"
+            "1. set         (string, required) Specify which set of communitynode(s) to start.\n"
             "2. lockwallet  (boolean, required) Lock wallet after completion.\n"
-            "3. alias       (string) Masternode alias. Required if using 'alias' as the set.\n"
-            "4. reload_conf (boolean) if true and \"alias\" was selected, reload the masternodes.conf data from disk"
+            "3. alias       (string) Communitynode alias. Required if using 'alias' as the set.\n"
+            "4. reload_conf (boolean) if true and \"alias\" was selected, reload the communitynodes.conf data from disk"
 
             "\nResult: (for 'local' set):\n"
-            "\"status\"     (string) Masternode status message\n"
+            "\"status\"     (string) Communitynode status message\n"
 
             "\nResult: (for other sets):\n"
             "{\n"
@@ -360,14 +361,14 @@ UniValue startmasternode (const JSONRPCRequest& request)
             "}\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("startmasternode", "\"alias\" \"0\" \"my_mn\"") + HelpExampleRpc("startmasternode", "\"alias\" \"0\" \"my_mn\""));
+            HelpExampleCli("startcommunitynode", "\"alias\" \"0\" \"my_mn\"") + HelpExampleRpc("startcommunitynode", "\"alias\" \"0\" \"my_mn\""));
 
     bool fLock = (request.params[1].get_str() == "true" ? true : false);
 
     EnsureWalletIsUnlocked();
 
     if (strCommand == "local") {
-        if (!fMasterNode) throw std::runtime_error("you must set masternode=1 in the configuration\n");
+        if (!fMasterNode) throw std::runtime_error("you must set communitynode=1 in the configuration\n");
 
         if (activeMasternode.GetStatus() != ACTIVE_MASTERNODE_STARTED) {
             activeMasternode.ResetStatus();
@@ -382,7 +383,7 @@ UniValue startmasternode (const JSONRPCRequest& request)
         if ((strCommand == "missing" || strCommand == "disabled") &&
             (masternodeSync.RequestedMasternodeAssets <= MASTERNODE_SYNC_LIST ||
                 masternodeSync.RequestedMasternodeAssets == MASTERNODE_SYNC_FAILED)) {
-            throw std::runtime_error("You can't use this command until masternode list is synced\n");
+            throw std::runtime_error("You can't use this command until communitynode list is synced\n");
         }
 
         int successful = 0;
@@ -404,7 +405,7 @@ UniValue startmasternode (const JSONRPCRequest& request)
             pwalletMain->Lock();
 
         UniValue returnObj(UniValue::VOBJ);
-        returnObj.pushKV("overall", strprintf("Successfully started %d masternodes, failed to start %d, total %d", successful, failed, successful + failed));
+        returnObj.pushKV("overall", strprintf("Successfully started %d communitynodes, failed to start %d, total %d", successful, failed, successful + failed));
         returnObj.pushKV("detail", resultsObj);
 
         return returnObj;
@@ -418,7 +419,7 @@ UniValue startmasternode (const JSONRPCRequest& request)
             masternodeConfig.clear();
             std::string error;
             if (!masternodeConfig.read(error)) {
-                throw std::runtime_error("Error reloading masternode.conf, " + error);
+                throw std::runtime_error("Error reloading communitynode.conf, " + error);
             }
         }
 
@@ -445,7 +446,7 @@ UniValue startmasternode (const JSONRPCRequest& request)
 
         if(!found) {
             statusObj.pushKV("success", false);
-            statusObj.pushKV("error_message", "Could not find alias in config. Verify with listmasternodeconf.");
+            statusObj.pushKV("error_message", "Could not find alias in config. Verify with listcommunitynodeconf.");
         }
 
         return statusObj;
@@ -457,14 +458,14 @@ UniValue createmasternodekey (const JSONRPCRequest& request)
 {
     if (request.fHelp || (request.params.size() != 0))
         throw std::runtime_error(
-            "createmasternodekey\n"
-            "\nCreate a new masternode private key\n"
+            "createcommunitynodekey\n"
+            "\nCreate a new communitynode private key\n"
 
             "\nResult:\n"
-            "\"key\"    (string) Masternode private key\n"
+            "\"key\"    (string) Communitynode private key\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("createmasternodekey", "") + HelpExampleRpc("createmasternodekey", ""));
+            HelpExampleCli("createcommunitynodekey", "") + HelpExampleRpc("createcommunitynodekey", ""));
 
     CKey secret;
     secret.MakeNewKey(false);
@@ -476,8 +477,8 @@ UniValue getmasternodeoutputs (const JSONRPCRequest& request)
 {
     if (request.fHelp || (request.params.size() != 0))
         throw std::runtime_error(
-            "getmasternodeoutputs\n"
-            "\nPrint all masternode transaction outputs\n"
+            "getcommunitynodeoutputs\n"
+            "\nPrint all communitynode transaction outputs\n"
 
             "\nResult:\n"
             "[\n"
@@ -489,7 +490,7 @@ UniValue getmasternodeoutputs (const JSONRPCRequest& request)
             "]\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("getmasternodeoutputs", "") + HelpExampleRpc("getmasternodeoutputs", ""));
+            HelpExampleCli("getcommunitynodeoutputs", "") + HelpExampleRpc("getcommunitynodeoutputs", ""));
 
     // Find possible candidates
     CWallet::AvailableCoinsFilter coinsFilter;
@@ -517,8 +518,8 @@ UniValue listmasternodeconf (const JSONRPCRequest& request)
 
     if (request.fHelp || (request.params.size() > 1))
         throw std::runtime_error(
-            "listmasternodeconf ( \"filter\" )\n"
-            "\nPrint masternode.conf in JSON format\n"
+            "listcommunitynodeconf ( \"filter\" )\n"
+            "\nPrint communitynode.conf in JSON format\n"
 
             "\nArguments:\n"
             "1. \"filter\"    (string, optional) Filter search text. Partial match on alias, address, txHash, or status.\n"
@@ -526,18 +527,18 @@ UniValue listmasternodeconf (const JSONRPCRequest& request)
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"alias\": \"xxxx\",        (string) masternode alias\n"
-            "    \"address\": \"xxxx\",      (string) masternode IP address\n"
-            "    \"privateKey\": \"xxxx\",   (string) masternode private key\n"
+            "    \"alias\": \"xxxx\",        (string) communitynode alias\n"
+            "    \"address\": \"xxxx\",      (string) communitynode IP address\n"
+            "    \"privateKey\": \"xxxx\",   (string) communitynode private key\n"
             "    \"txHash\": \"xxxx\",       (string) transaction hash\n"
             "    \"outputIndex\": n,       (numeric) transaction output index\n"
-            "    \"status\": \"xxxx\"        (string) masternode status\n"
+            "    \"status\": \"xxxx\"        (string) communitynode status\n"
             "  }\n"
             "  ,...\n"
             "]\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("listmasternodeconf", "") + HelpExampleRpc("listmasternodeconf", ""));
+            HelpExampleCli("listcommunitynodeconf", "") + HelpExampleRpc("listcommunitynodeconf", ""));
 
     std::vector<CMasternodeConfig::CMasternodeEntry> mnEntries;
     mnEntries = masternodeConfig.getEntries();
@@ -575,27 +576,27 @@ UniValue getmasternodestatus (const JSONRPCRequest& request)
 {
     if (request.fHelp || (request.params.size() != 0))
         throw std::runtime_error(
-            "getmasternodestatus\n"
-            "\nPrint masternode status\n"
+            "getcommunitynodestatus\n"
+            "\nPrint communitynode status\n"
 
             "\nResult:\n"
             "{\n"
             "  \"txhash\": \"xxxx\",      (string) Collateral transaction hash\n"
             "  \"outputidx\": n,          (numeric) Collateral transaction output index number\n"
-            "  \"netaddr\": \"xxxx\",     (string) Masternode network address\n"
-            "  \"addr\": \"xxxx\",        (string) PIVX address for masternode payments\n"
-            "  \"status\": \"xxxx\",      (string) Masternode status\n"
-            "  \"message\": \"xxxx\"      (string) Masternode status message\n"
+            "  \"netaddr\": \"xxxx\",     (string) Communitynode network address\n"
+            "  \"addr\": \"xxxx\",        (string) Posante address for communitynode payments\n"
+            "  \"status\": \"xxxx\",      (string) Communitynode status\n"
+            "  \"message\": \"xxxx\"      (string) Communitynode status message\n"
             "}\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("getmasternodestatus", "") + HelpExampleRpc("getmasternodestatus", ""));
+            HelpExampleCli("getcommunitynodestatus", "") + HelpExampleRpc("getcommunitynodestatus", ""));
 
     if (!fMasterNode)
-        throw JSONRPCError(RPC_MISC_ERROR, _("This is not a masternode."));
+        throw JSONRPCError(RPC_MISC_ERROR, _("This is not a communitynode."));
 
     if (activeMasternode.vin == nullopt)
-        throw JSONRPCError(RPC_MISC_ERROR, _("Active Masternode not initialized."));
+        throw JSONRPCError(RPC_MISC_ERROR, _("Active Communitynode not initialized."));
 
     CMasternode* pmn = mnodeman.Find(activeMasternode.vin->prevout);
 
@@ -609,7 +610,7 @@ UniValue getmasternodestatus (const JSONRPCRequest& request)
         mnObj.pushKV("message", activeMasternode.GetStatusMessage());
         return mnObj;
     }
-    throw std::runtime_error("Masternode not found in the list of available masternodes. Current status: "
+    throw std::runtime_error("Communitynode not found in the list of available communitynodes. Current status: "
                         + activeMasternode.GetStatusMessage());
 }
 
@@ -617,8 +618,8 @@ UniValue getmasternodewinners (const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() > 3)
         throw std::runtime_error(
-            "getmasternodewinners ( blocks \"filter\" )\n"
-            "\nPrint the masternode winners for the last n blocks\n"
+            "getcommunitynodewinners ( blocks \"filter\" )\n"
+            "\nPrint the communitynode winners for the last n blocks\n"
 
             "\nArguments:\n"
             "1. blocks      (numeric, optional) Number of previous blocks to show (default: 10)\n"
@@ -629,7 +630,7 @@ UniValue getmasternodewinners (const JSONRPCRequest& request)
             "  {\n"
             "    \"nHeight\": n,           (numeric) block height\n"
             "    \"winner\": {\n"
-            "      \"address\": \"xxxx\",    (string) PIVX MN Address\n"
+            "      \"address\": \"xxxx\",    (string) Posante MN Address\n"
             "      \"nVotes\": n,          (numeric) Number of votes for winner\n"
             "    }\n"
             "  }\n"
@@ -642,7 +643,7 @@ UniValue getmasternodewinners (const JSONRPCRequest& request)
             "    \"nHeight\": n,           (numeric) block height\n"
             "    \"winner\": [\n"
             "      {\n"
-            "        \"address\": \"xxxx\",  (string) PIVX MN Address\n"
+            "        \"address\": \"xxxx\",  (string) Posante MN Address\n"
             "        \"nVotes\": n,        (numeric) Number of votes for winner\n"
             "      }\n"
             "      ,...\n"
@@ -652,7 +653,7 @@ UniValue getmasternodewinners (const JSONRPCRequest& request)
             "]\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("getmasternodewinners", "") + HelpExampleRpc("getmasternodewinners", ""));
+            HelpExampleCli("getcommunitynodewinners", "") + HelpExampleRpc("getcommunitynodewinners", ""));
 
     int nHeight = WITH_LOCK(cs_main, return chainActive.Height());
     if (nHeight < 0) return "[]";
@@ -714,20 +715,20 @@ UniValue getmasternodescores (const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() > 1)
         throw std::runtime_error(
-            "getmasternodescores ( blocks )\n"
-            "\nPrint list of winning masternode by score\n"
+            "getcommunitynodescores ( blocks )\n"
+            "\nPrint list of winning communitynode by score\n"
 
             "\nArguments:\n"
             "1. blocks      (numeric, optional) Show the last n blocks (default 10)\n"
 
             "\nResult:\n"
             "{\n"
-            "  xxxx: \"xxxx\"   (numeric : string) Block height : Masternode hash\n"
+            "  xxxx: \"xxxx\"   (numeric : string) Block height : Communitynode hash\n"
             "  ,...\n"
             "}\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("getmasternodescores", "") + HelpExampleRpc("getmasternodescores", ""));
+            HelpExampleCli("getcommunitynodescores", "") + HelpExampleRpc("getcommunitynodescores", ""));
 
     int nLast = 10;
 
@@ -774,20 +775,20 @@ UniValue createmasternodebroadcast(const JSONRPCRequest& request)
         strCommand = request.params[0].get_str();
     if (request.fHelp || (strCommand != "alias" && strCommand != "all") || (strCommand == "alias" && request.params.size() < 2))
         throw std::runtime_error(
-            "createmasternodebroadcast \"command\" ( \"alias\")\n"
-            "\nCreates a masternode broadcast message for one or all masternodes configured in masternode.conf\n" +
+            "createcommunitynodebroadcast \"command\" ( \"alias\")\n"
+            "\nCreates a communitynode broadcast message for one or all communitynodes configured in communitynode.conf\n" +
             HelpRequiringPassphrase() + "\n"
 
             "\nArguments:\n"
-            "1. \"command\"      (string, required) \"alias\" for single masternode, \"all\" for all masternodes\n"
-            "2. \"alias\"        (string, required if command is \"alias\") Alias of the masternode\n"
+            "1. \"command\"      (string, required) \"alias\" for single communitynode, \"all\" for all communitynodes\n"
+            "2. \"alias\"        (string, required if command is \"alias\") Alias of the communitynode\n"
 
             "\nResult (all):\n"
             "{\n"
             "  \"overall\": \"xxx\",        (string) Overall status message indicating number of successes.\n"
             "  \"detail\": [                (array) JSON array of broadcast objects.\n"
             "    {\n"
-            "      \"alias\": \"xxx\",      (string) Alias of the masternode.\n"
+            "      \"alias\": \"xxx\",      (string) Alias of the communitynode.\n"
             "      \"success\": true|false, (boolean) Success status.\n"
             "      \"hex\": \"xxx\"         (string, if success=true) Hex encoded broadcast message.\n"
             "      \"error_message\": \"xxx\"   (string, if success=false) Error message, if any.\n"
@@ -798,14 +799,14 @@ UniValue createmasternodebroadcast(const JSONRPCRequest& request)
 
             "\nResult (alias):\n"
             "{\n"
-            "  \"alias\": \"xxx\",      (string) Alias of the masternode.\n"
+            "  \"alias\": \"xxx\",      (string) Alias of the communitynode.\n"
             "  \"success\": true|false, (boolean) Success status.\n"
             "  \"hex\": \"xxx\"         (string, if success=true) Hex encoded broadcast message.\n"
             "  \"error_message\": \"xxx\"   (string, if success=false) Error message, if any.\n"
             "}\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("createmasternodebroadcast", "alias mymn1") + HelpExampleRpc("createmasternodebroadcast", "alias mymn1"));
+            HelpExampleCli("createcommunitynodebroadcast", "alias mymn1") + HelpExampleRpc("createcommunitynodebroadcast", "alias mymn1"));
 
     EnsureWalletIsUnlocked();
 
@@ -836,7 +837,7 @@ UniValue createmasternodebroadcast(const JSONRPCRequest& request)
 
         if(!found) {
             statusObj.pushKV("success", false);
-            statusObj.pushKV("error_message", "Could not find alias in config. Verify with listmasternodeconf.");
+            statusObj.pushKV("error_message", "Could not find alias in config. Verify with listcommunitynodeconf.");
         }
 
         return statusObj;
@@ -865,7 +866,7 @@ UniValue createmasternodebroadcast(const JSONRPCRequest& request)
         }
 
         UniValue returnObj(UniValue::VOBJ);
-        returnObj.pushKV("overall", strprintf("Successfully created broadcast messages for %d masternodes, failed to create %d, total %d", successful, failed, successful + failed));
+        returnObj.pushKV("overall", strprintf("Successfully created broadcast messages for %d communitynodes, failed to create %d, total %d", successful, failed, successful + failed));
         returnObj.pushKV("detail", resultsObj);
 
         return returnObj;
@@ -877,47 +878,47 @@ UniValue decodemasternodebroadcast(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
         throw std::runtime_error(
-            "decodemasternodebroadcast \"hexstring\"\n"
-            "\nCommand to decode masternode broadcast messages\n"
+            "decodecommunitynodebroadcast \"hexstring\"\n"
+            "\nCommand to decode communitynode broadcast messages\n"
 
             "\nArgument:\n"
-            "1. \"hexstring\"        (string) The hex encoded masternode broadcast message\n"
+            "1. \"hexstring\"        (string) The hex encoded communitynode broadcast message\n"
 
             "\nResult:\n"
             "{\n"
-            "  \"vin\": \"xxxx\"                (string) The unspent output which is holding the masternode collateral\n"
-            "  \"addr\": \"xxxx\"               (string) IP address of the masternode\n"
+            "  \"vin\": \"xxxx\"                (string) The unspent output which is holding the communitynode collateral\n"
+            "  \"addr\": \"xxxx\"               (string) IP address of the communitynode\n"
             "  \"pubkeycollateral\": \"xxxx\"   (string) Collateral address's public key\n"
-            "  \"pubkeymasternode\": \"xxxx\"   (string) Masternode's public key\n"
+            "  \"pubkeycommunitynode\": \"xxxx\"   (string) Communitynode's public key\n"
             "  \"vchsig\": \"xxxx\"             (string) Base64-encoded signature of this message (verifiable via pubkeycollateral)\n"
             "  \"sigtime\": \"nnn\"             (numeric) Signature timestamp\n"
             "  \"sigvalid\": \"xxx\"            (string) \"true\"/\"false\" whether or not the mnb signature checks out.\n"
-            "  \"protocolversion\": \"nnn\"     (numeric) Masternode's protocol version\n"
+            "  \"protocolversion\": \"nnn\"     (numeric) Communitynode's protocol version\n"
             "  \"nMessVersion\": \"nnn\"        (numeric) MNB Message version number\n"
-            "  \"lastping\" : {                 (object) JSON object with information about the masternode's last ping\n"
-            "      \"vin\": \"xxxx\"            (string) The unspent output of the masternode which is signing the message\n"
+            "  \"lastping\" : {                 (object) JSON object with information about the communitynode's last ping\n"
+            "      \"vin\": \"xxxx\"            (string) The unspent output of the communitynode which is signing the message\n"
             "      \"blockhash\": \"xxxx\"      (string) Current chaintip blockhash minus 12\n"
             "      \"sigtime\": \"nnn\"         (numeric) Signature time for this ping\n"
             "      \"sigvalid\": \"xxx\"        (string) \"true\"/\"false\" whether or not the mnp signature checks out.\n"
-            "      \"vchsig\": \"xxxx\"         (string) Base64-encoded signature of this ping (verifiable via pubkeymasternode)\n"
+            "      \"vchsig\": \"xxxx\"         (string) Base64-encoded signature of this ping (verifiable via pubkeycommunitynode)\n"
             "      \"nMessVersion\": \"nnn\"    (numeric) MNP Message version number\n"
             "  }\n"
             "}\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("decodemasternodebroadcast", "hexstring") + HelpExampleRpc("decodemasternodebroadcast", "hexstring"));
+            HelpExampleCli("decodecommunitynodebroadcast", "hexstring") + HelpExampleRpc("decodecommunitynodebroadcast", "hexstring"));
 
     CMasternodeBroadcast mnb;
 
     if (!DecodeHexMnb(mnb, request.params[0].get_str()))
-        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Masternode broadcast message decode failed");
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Communitynode broadcast message decode failed");
 
     UniValue resultObj(UniValue::VOBJ);
 
     resultObj.pushKV("vin", mnb.vin.prevout.ToString());
     resultObj.pushKV("addr", mnb.addr.ToString());
     resultObj.pushKV("pubkeycollateral", EncodeDestination(mnb.pubKeyCollateralAddress.GetID()));
-    resultObj.pushKV("pubkeymasternode", EncodeDestination(mnb.pubKeyMasternode.GetID()));
+    resultObj.pushKV("pubkeycommunitynode", EncodeDestination(mnb.pubKeyMasternode.GetID()));
     resultObj.pushKV("vchsig", mnb.GetSignatureBase64());
     resultObj.pushKV("sigtime", mnb.sigTime);
     resultObj.pushKV("sigvalid", mnb.CheckSignature() ? "true" : "false");
@@ -941,47 +942,47 @@ UniValue relaymasternodebroadcast(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
         throw std::runtime_error(
-            "relaymasternodebroadcast \"hexstring\"\n"
-            "\nCommand to relay masternode broadcast messages\n"
+            "relaycommunitynodebroadcast \"hexstring\"\n"
+            "\nCommand to relay communitynode broadcast messages\n"
 
             "\nArguments:\n"
-            "1. \"hexstring\"        (string) The hex encoded masternode broadcast message\n"
+            "1. \"hexstring\"        (string) The hex encoded communitynode broadcast message\n"
 
             "\nExamples:\n" +
-            HelpExampleCli("relaymasternodebroadcast", "hexstring") + HelpExampleRpc("relaymasternodebroadcast", "hexstring"));
+            HelpExampleCli("relaycommunitynodebroadcast", "hexstring") + HelpExampleRpc("relaycommunitynodebroadcast", "hexstring"));
 
 
     CMasternodeBroadcast mnb;
 
     if (!DecodeHexMnb(mnb, request.params[0].get_str()))
-        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Masternode broadcast message decode failed");
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Communitynode broadcast message decode failed");
 
     if(!mnb.CheckSignature())
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Masternode broadcast signature verification failed");
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Communitynode broadcast signature verification failed");
 
     mnodeman.UpdateMasternodeList(mnb);
     mnb.Relay();
 
-    return strprintf("Masternode broadcast sent (service %s, vin %s)", mnb.addr.ToString(), mnb.vin.ToString());
+    return strprintf("Communitynode broadcast sent (service %s, vin %s)", mnb.addr.ToString(), mnb.vin.ToString());
 }
 
 static const CRPCCommand commands[] =
 { //  category              name                         actor (function)            okSafeMode
   //  --------------------- ---------------------------  --------------------------  ----------
-    { "masternode",         "listmasternodes",           &listmasternodes,           true  },
-    { "masternode",         "getmasternodecount",        &getmasternodecount,        true  },
-    { "masternode",         "masternodecurrent",         &masternodecurrent,         true  },
-    { "masternode",         "startmasternode",           &startmasternode,           true  },
-    { "masternode",         "createmasternodekey",       &createmasternodekey,       true  },
-    { "masternode",         "getmasternodeoutputs",      &getmasternodeoutputs,      true  },
-    { "masternode",         "listmasternodeconf",        &listmasternodeconf,        true  },
-    { "masternode",         "getmasternodestatus",       &getmasternodestatus,       true  },
-    { "masternode",         "getmasternodewinners",      &getmasternodewinners,      true  },
-    { "masternode",         "getmasternodescores",       &getmasternodescores,       true  },
-    { "masternode",         "createmasternodebroadcast", &createmasternodebroadcast, true  },
-    { "masternode",         "decodemasternodebroadcast", &decodemasternodebroadcast, true  },
-    { "masternode",         "relaymasternodebroadcast",  &relaymasternodebroadcast,  true  },
-    { "masternode",         "initmasternode",            &initmasternode,            true  },
+    { "communitynode",         "listcommunitynodes",           &listmasternodes,           true  },
+    { "communitynode",         "getcommunitynodecount",        &getmasternodecount,        true  },
+    { "communitynode",         "communitynodecurrent",         &masternodecurrent,         true  },
+    { "communitynode",         "startcommunitynode",           &startmasternode,           true  },
+    { "communitynode",         "createcommunitynodekey",       &createmasternodekey,       true  },
+    { "communitynode",         "getcommunitynodeoutputs",      &getmasternodeoutputs,      true  },
+    { "communitynode",         "listcommunitynodeconf",        &listmasternodeconf,        true  },
+    { "communitynode",         "getcommunitynodestatus",       &getmasternodestatus,       true  },
+    { "communitynode",         "getcommunitynodewinners",      &getmasternodewinners,      true  },
+    { "communitynode",         "getcommunitynodescores",       &getmasternodescores,       true  },
+    { "communitynode",         "createcommunitynodebroadcast", &createmasternodebroadcast, true  },
+    { "communitynode",         "decodecommunitynodebroadcast", &decodemasternodebroadcast, true  },
+    { "communitynode",         "relaycommunitynodebroadcast",  &relaymasternodebroadcast,  true  },
+    { "communitynode",         "initcommunitynode",            &initmasternode,            true  },
 
     /* Not shown in help */
     { "hidden",             "getcachedblockhashes",      &getcachedblockhashes,      true  },

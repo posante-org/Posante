@@ -1,10 +1,11 @@
 // Copyright (c) 2016-2020 The ZCash developers
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "test/test_pivx.h"
 #include "test/librust/utiltest.h"
+#include "test/test_posante.h"
 
 #include "sapling/address.h"
 #include "sapling/sapling_util.h"
@@ -20,7 +21,8 @@ extern UniValue read_json(const std::string& jsondata);
 BOOST_FIXTURE_TEST_SUITE(sapling_keystore_tests, BasicTestingSetup)
 
 
-BOOST_AUTO_TEST_CASE(saplingKeys) {
+BOOST_AUTO_TEST_CASE(saplingKeys)
+{
     // ["sk, ask, nsk, ovk, ak, nk, ivk, default_d, default_pk_d, note_v, note_r, note_cm, note_pos, note_nf"],
     UniValue sapling_keys = read_json(std::string(json_tests::sapling_key_components, json_tests::sapling_key_components + sizeof(json_tests::sapling_key_components)));
 
@@ -75,13 +77,14 @@ BOOST_AUTO_TEST_CASE(saplingKeys) {
 }
 
 
-BOOST_AUTO_TEST_CASE(StoreAndRetrieveSaplingSpendingKey) {
+BOOST_AUTO_TEST_CASE(StoreAndRetrieveSaplingSpendingKey)
+{
     CBasicKeyStore keyStore;
     libzcash::SaplingExtendedSpendingKey skOut;
     libzcash::SaplingExtendedFullViewingKey extfvkOut;
     libzcash::SaplingIncomingViewingKey ivkOut;
 
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    std::vector<unsigned char, secure_allocator<unsigned char> > rawSeed(32);
     HDSeed seed(rawSeed);
     auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
     auto extfvk = sk.ToXFVK();
@@ -111,7 +114,8 @@ BOOST_AUTO_TEST_CASE(StoreAndRetrieveSaplingSpendingKey) {
     BOOST_CHECK(ivk == ivkOut);
 }
 
-BOOST_AUTO_TEST_CASE(StoreAndRetrieveSaplingFullViewingKey) {
+BOOST_AUTO_TEST_CASE(StoreAndRetrieveSaplingFullViewingKey)
+{
     CBasicKeyStore keyStore;
     libzcash::SaplingExtendedSpendingKey skOut;
     libzcash::SaplingExtendedFullViewingKey extfvkOut;

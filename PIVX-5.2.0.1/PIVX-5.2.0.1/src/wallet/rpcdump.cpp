@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -83,20 +84,20 @@ UniValue importprivkey(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 4)
         throw std::runtime_error(
-            "importprivkey \"pivxprivkey\" ( \"label\" rescan fStakingAddress )\n"
+            "importprivkey \"posanteprivkey\" ( \"label\" rescan fStakingAddress )\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n" +
             HelpRequiringPassphrase() + "\n"
 
-            "\nArguments:\n"
-            "1. \"pivxprivkey\"      (string, required) The private key (see dumpprivkey)\n"
-            "2. \"label\"            (string, optional, default=\"\") An optional label\n"
-            "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
-            "4. fStakingAddress      (boolean, optional, default=false) Whether this key refers to a (cold) staking address\n"
+                                        "\nArguments:\n"
+                                        "1. \"posanteprivkey\"      (string, required) The private key (see dumpprivkey)\n"
+                                        "2. \"label\"            (string, optional, default=\"\") An optional label\n"
+                                        "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
+                                        "4. fStakingAddress      (boolean, optional, default=false) Whether this key refers to a (cold) staking address\n"
 
-            "\nNote: This call can take minutes to complete if rescan is true.\n"
+                                        "\nNote: This call can take minutes to complete if rescan is true.\n"
 
-            "\nExamples:\n"
-            "\nDump a private key\n" +
+                                        "\nExamples:\n"
+                                        "\nDump a private key\n" +
             HelpExampleCli("dumpprivkey", "\"myaddress\"") +
             "\nImport the private key with rescan\n" +
             HelpExampleCli("importprivkey", "\"mykey\"") +
@@ -121,10 +122,7 @@ UniValue importprivkey(const JSONRPCRequest& request)
         EnsureWalletIsUnlocked();
 
         pwalletMain->MarkDirty();
-        pwalletMain->SetAddressBook(vchAddress, strLabel, (
-                fStakingAddress ?
-                        AddressBook::AddressBookPurpose::COLD_STAKING :
-                        AddressBook::AddressBookPurpose::RECEIVE));
+        pwalletMain->SetAddressBook(vchAddress, strLabel, (fStakingAddress ? AddressBook::AddressBookPurpose::COLD_STAKING : AddressBook::AddressBookPurpose::RECEIVE));
 
         // Don't throw error in case a key is already there
         if (pwalletMain->HaveKey(vchAddress))
@@ -139,9 +137,9 @@ UniValue importprivkey(const JSONRPCRequest& request)
         pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
         if (fRescan) {
-            CBlockIndex *pindex = chainActive.Genesis();
+            CBlockIndex* pindex = chainActive.Genesis();
             if (fStakingAddress && !Params().IsRegTestNet()) {
-                // cold staking was activated after nBlockTimeProtocolV2 (PIVX v4.0). No need to scan the whole chain
+                // cold staking was activated after nBlockTimeProtocolV2 (Posante v4.0). No need to scan the whole chain
                 pindex = chainActive[Params().GetConsensus().vUpgrades[Consensus::UPGRADE_V4_0].nActivationHeight];
             }
             pwalletMain->ScanForWalletTransactions(pindex, true);
@@ -166,7 +164,7 @@ void ImportScript(const CScript& script, const std::string& strLabel, bool isRed
     if (isRedeemScript) {
         if (!pwalletMain->HaveCScript(script) && !pwalletMain->AddCScript(script))
             throw JSONRPCError(RPC_WALLET_ERROR, "Error adding p2sh redeemScript to wallet");
-        ImportAddress(CScriptID(script), strLabel,  "receive");
+        ImportAddress(CScriptID(script), strLabel, "receive");
     }
 }
 
@@ -218,16 +216,14 @@ UniValue importaddress(const JSONRPCRequest& request)
     if (IsValidDestination(dest)) {
         if (fP2SH)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Cannot use the p2sh flag with an address - use a script instead");
-        ImportAddress(dest, strLabel, isStakingAddress ?
-                                        AddressBook::AddressBookPurpose::COLD_STAKING :
-                                        AddressBook::AddressBookPurpose::RECEIVE);
+        ImportAddress(dest, strLabel, isStakingAddress ? AddressBook::AddressBookPurpose::COLD_STAKING : AddressBook::AddressBookPurpose::RECEIVE);
 
     } else if (IsHex(request.params[0].get_str())) {
         std::vector<unsigned char> data(ParseHex(request.params[0].get_str()));
         ImportScript(CScript(data.begin(), data.end()), strLabel, fP2SH);
 
     } else {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid PIVX address or script");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Posante address or script");
     }
 
     if (fRescan) {
@@ -250,13 +246,10 @@ UniValue importpubkey(const JSONRPCRequest& request)
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
-            "\nImport a public key with rescan\n"
-            + HelpExampleCli("importpubkey", "\"mypubkey\"") +
-            "\nImport using a label without rescan\n"
-            + HelpExampleCli("importpubkey", "\"mypubkey\" \"testing\" false") +
-            "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("importpubkey", "\"mypubkey\", \"testing\", false")
-        );
+            "\nImport a public key with rescan\n" +
+            HelpExampleCli("importpubkey", "\"mypubkey\"") +
+            "\nImport using a label without rescan\n" + HelpExampleCli("importpubkey", "\"mypubkey\" \"testing\" false") +
+            "\nAs a JSON-RPC call\n" + HelpExampleRpc("importpubkey", "\"mypubkey\", \"testing\", false"));
 
     const std::string strLabel = (request.params.size() > 1 ? request.params[1].get_str() : "");
     // Whether to perform rescan after import
@@ -291,11 +284,11 @@ UniValue importwallet(const JSONRPCRequest& request)
             "\nImports keys from a wallet dump file (see dumpwallet).\n" +
             HelpRequiringPassphrase() + "\n"
 
-            "\nArguments:\n"
-            "1. \"filename\"    (string, required) The wallet file\n"
+                                        "\nArguments:\n"
+                                        "1. \"filename\"    (string, required) The wallet file\n"
 
-            "\nExamples:\n"
-            "\nDump the wallet\n" +
+                                        "\nExamples:\n"
+                                        "\nDump the wallet\n" +
             HelpExampleCli("dumpwallet", "\"test\"") +
             "\nImport the wallet\n" +
             HelpExampleCli("importwallet", "\"test\"") +
@@ -332,14 +325,14 @@ UniValue importwallet(const JSONRPCRequest& request)
             continue;
 
         // Sapling keys
-        // Let's see if the address is a valid PIVX spending key
+        // Let's see if the address is a valid Posante spending key
         if (pwalletMain->HasSaplingSPKM()) {
             libzcash::SpendingKey spendingkey = KeyIO::DecodeSpendingKey(vstr[0]);
             int64_t nTime = DecodeDumpTime(vstr[1]);
             if (IsValidSpendingKey(spendingkey)) {
                 libzcash::SaplingExtendedSpendingKey saplingSpendingKey = *boost::get<libzcash::SaplingExtendedSpendingKey>(&spendingkey);
                 auto addResult = pwalletMain->GetSaplingScriptPubKeyMan()->AddSpendingKeyToWallet(
-                        Params().GetConsensus(), saplingSpendingKey, nTime);
+                    Params().GetConsensus(), saplingSpendingKey, nTime);
                 if (addResult == KeyAlreadyExists) {
                     LogPrint(BCLog::SAPLING, "Skipping import of shielded addr (key already present)\n");
                 } else if (addResult == KeyNotAdded) {
@@ -412,18 +405,18 @@ UniValue dumpprivkey(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
         throw std::runtime_error(
-            "dumpprivkey \"pivxaddress\"\n"
-            "\nReveals the private key corresponding to 'pivxaddress'.\n"
+            "dumpprivkey \"posanteaddress\"\n"
+            "\nReveals the private key corresponding to 'posanteaddress'.\n"
             "Then the importprivkey can be used with this output\n" +
             HelpRequiringPassphrase() + "\n"
 
-            "\nArguments:\n"
-            "1. \"pivxaddress\"   (string, required) The pivx address for the private key\n"
+                                        "\nArguments:\n"
+                                        "1. \"posanteaddress\"   (string, required) The posante address for the private key\n"
 
-            "\nResult:\n"
-            "\"key\"                (string) The private key\n"
+                                        "\nResult:\n"
+                                        "\"key\"                (string) The private key\n"
 
-            "\nExamples:\n" +
+                                        "\nExamples:\n" +
             HelpExampleCli("dumpprivkey", "\"myaddress\"") + HelpExampleCli("importprivkey", "\"mykey\"") + HelpExampleRpc("dumpprivkey", "\"myaddress\""));
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -433,7 +426,7 @@ UniValue dumpprivkey(const JSONRPCRequest& request)
     std::string strAddress = request.params[0].get_str();
     CTxDestination dest = DecodeDestination(strAddress);
     if (!IsValidDestination(dest))
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid PIVX address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Posante address");
     const CKeyID* keyID = boost::get<CKeyID>(&dest);
     if (!keyID)
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");
@@ -451,21 +444,21 @@ UniValue dumpwallet(const JSONRPCRequest& request)
             "\nDumps all wallet keys in a human-readable format to a server-side file. This does not allow overwriting existing files.\n" +
             HelpRequiringPassphrase() + "\n"
 
-            "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename\n"
+                                        "\nArguments:\n"
+                                        "1. \"filename\"    (string, required) The filename\n"
 
-            "\nResult:\n"
-            "{\n"
-            "  \"filename\": \"xxxx\",     (string) The full path to the wallet dump file.\n"
-            "  \"warning\": \"xxxx\"       (string) A warning message about the exact contents of this file.\n"
-            "}\n"
+                                        "\nResult:\n"
+                                        "{\n"
+                                        "  \"filename\": \"xxxx\",     (string) The full path to the wallet dump file.\n"
+                                        "  \"warning\": \"xxxx\"       (string) A warning message about the exact contents of this file.\n"
+                                        "}\n"
 
-            "\nExamples:\n" +
+                                        "\nExamples:\n" +
             HelpExampleCli("dumpwallet", "\"test\"") + HelpExampleRpc("dumpwallet", "\"test\""));
 
     if (request.params[0].get_str().find("bug") != std::string::npos ||
         request.params[0].get_str().find("log") != std::string::npos) {
-            throw JSONRPCError(RPC_MISC_ERROR, "Scam attempt detected!");
+        throw JSONRPCError(RPC_MISC_ERROR, "Scam attempt detected!");
     }
 
     // Make sure the results are valid at least up to the most recent block
@@ -510,11 +503,11 @@ UniValue dumpwallet(const JSONRPCRequest& request)
 
     CBlockIndex* tip = chainActive.Tip();
     // produce output
-    file << strprintf("# Wallet dump created by PIVX %s (%s)\n", CLIENT_BUILD, CLIENT_DATE);
+    file << strprintf("# Wallet dump created by Posante %s (%s)\n", CLIENT_BUILD, CLIENT_DATE);
     file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()));
     if (tip) {
         file << strprintf("# * Best block at time of backup was %i (%s),\n", tip->nHeight,
-                          tip->GetBlockHash().ToString());
+            tip->GetBlockHash().ToString());
         file << strprintf("#   mined on %s\n", EncodeDumpTime(tip->GetBlockTime()));
     } else {
         file << "# Missing tip information\n";
@@ -523,8 +516,7 @@ UniValue dumpwallet(const JSONRPCRequest& request)
 
     // Add the base58check encoded extended master if the wallet uses HD
     CKeyID seed_id = spk_man->GetHDChain().GetID();
-    if (!seed_id.IsNull())
-    {
+    if (!seed_id.IsNull()) {
         CKey seed;
         if (pwalletMain->GetKey(seed_id, seed)) {
             CExtKey masterKey;
@@ -541,8 +533,8 @@ UniValue dumpwallet(const JSONRPCRequest& request)
         if (pwalletMain->GetKey(keyid, key)) {
             const CKeyMetadata& metadata = pwalletMain->mapKeyMetadata[keyid];
             std::string strAddr = EncodeDestination(keyid, (metadata.HasKeyOrigin() && IsStakingDerPath(metadata.key_origin) ?
-                                                          CChainParams::STAKING_ADDRESS :
-                                                          CChainParams::PUBKEY_ADDRESS));
+                                                                   CChainParams::STAKING_ADDRESS :
+                                                                   CChainParams::PUBKEY_ADDRESS));
 
             file << strprintf("%s %s ", KeyIO::EncodeSecret(key), strTime);
             if (pwalletMain->HasAddressBook(keyid)) {
@@ -554,7 +546,7 @@ UniValue dumpwallet(const JSONRPCRequest& request)
             } else {
                 file << "change=1";
             }
-            file << strprintf(" # addr=%s%s\n", strAddr, (metadata.HasKeyOrigin() ? " hdkeypath="+metadata.key_origin.pathToString() : ""));
+            file << strprintf(" # addr=%s%s\n", strAddr, (metadata.HasKeyOrigin() ? " hdkeypath=" + metadata.key_origin.pathToString() : ""));
         }
     }
 
@@ -572,11 +564,10 @@ UniValue dumpwallet(const JSONRPCRequest& request)
             std::string strTime = EncodeDumpTime(keyMeta.nCreateTime);
             // Keys imported with importsaplingkey do not have key origin metadata
             file << strprintf("%s %s # shielded_addr=%s%s\n",
-                    KeyIO::EncodeSpendingKey(extsk),
-                    strTime,
-                    KeyIO::EncodePaymentAddress(addr),
-                    (keyMeta.HasKeyOrigin() ? " hdkeypath=" + keyMeta.key_origin.pathToString() : "")
-                    );
+                KeyIO::EncodeSpendingKey(extsk),
+                strTime,
+                KeyIO::EncodePaymentAddress(addr),
+                (keyMeta.HasKeyOrigin() ? " hdkeypath=" + keyMeta.key_origin.pathToString() : ""));
         }
     }
 
@@ -595,18 +586,18 @@ UniValue bip38encrypt(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 2)
         throw std::runtime_error(
-            "bip38encrypt \"pivxaddress\" \"passphrase\"\n"
-            "\nEncrypts a private key corresponding to 'pivxaddress'.\n" +
+            "bip38encrypt \"posanteaddress\" \"passphrase\"\n"
+            "\nEncrypts a private key corresponding to 'posanteaddress'.\n" +
             HelpRequiringPassphrase() + "\n"
 
-            "\nArguments:\n"
-            "1. \"pivxaddress\"   (string, required) The pivx address for the private key (you must hold the key already)\n"
-            "2. \"passphrase\"   (string, required) The passphrase you want the private key to be encrypted with - Valid special chars: !#$%&'()*+,-./:;<=>?`{|}~ \n"
+                                        "\nArguments:\n"
+                                        "1. \"posanteaddress\"   (string, required) The posante address for the private key (you must hold the key already)\n"
+                                        "2. \"passphrase\"   (string, required) The passphrase you want the private key to be encrypted with - Valid special chars: !#$%&'()*+,-./:;<=>?`{|}~ \n"
 
-            "\nResult:\n"
-            "\"key\"                (string) The encrypted private key\n"
+                                        "\nResult:\n"
+                                        "\"key\"                (string) The encrypted private key\n"
 
-            "\nExamples:\n" +
+                                        "\nExamples:\n" +
             HelpExampleCli("bip38encrypt", "\"DMJRSsuU9zfyrvxVaAEFQqK4MxZg6vgeS6\" \"mypasphrase\"") +
             HelpExampleRpc("bip38encrypt", "\"DMJRSsuU9zfyrvxVaAEFQqK4MxZg6vgeS6\" \"mypasphrase\""));
 
@@ -619,7 +610,7 @@ UniValue bip38encrypt(const JSONRPCRequest& request)
 
     CTxDestination address = DecodeDestination(strAddress);
     if (!IsValidDestination(address))
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid PIVX address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Posante address");
     const CKeyID* keyID = boost::get<CKeyID>(&address);
     if (!keyID)
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");
@@ -641,18 +632,18 @@ UniValue bip38decrypt(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 2)
         throw std::runtime_error(
-            "bip38decrypt \"pivxaddress\" \"passphrase\"\n"
+            "bip38decrypt \"posanteaddress\" \"passphrase\"\n"
             "\nDecrypts and then imports password protected private key.\n" +
             HelpRequiringPassphrase() + "\n"
 
-            "\nArguments:\n"
-            "1. \"encryptedkey\"   (string, required) The encrypted private key\n"
-            "2. \"passphrase\"   (string, required) The passphrase you want the private key to be encrypted with\n"
+                                        "\nArguments:\n"
+                                        "1. \"encryptedkey\"   (string, required) The encrypted private key\n"
+                                        "2. \"passphrase\"   (string, required) The passphrase you want the private key to be encrypted with\n"
 
-            "\nResult:\n"
-            "\"key\"                (string) The decrypted private key\n"
+                                        "\nResult:\n"
+                                        "\"key\"                (string) The decrypted private key\n"
 
-            "\nExamples:\n" +
+                                        "\nExamples:\n" +
             HelpExampleCli("bip38decrypt", "\"encryptedkey\" \"mypassphrase\"") +
             HelpExampleRpc("bip38decrypt", "\"encryptedkey\" \"mypassphrase\""));
 
@@ -709,33 +700,28 @@ UniValue importsaplingkey(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 3)
         throw std::runtime_error(
-                "importsaplingkey \"key\" ( rescan startHeight )\n"
-                "\nAdds a key (as returned by exportsaplingkey) to your wallet.\n"
-                + HelpRequiringPassphrase() + "\n"
+            "importsaplingkey \"key\" ( rescan startHeight )\n"
+            "\nAdds a key (as returned by exportsaplingkey) to your wallet.\n" +
+            HelpRequiringPassphrase() + "\n"
 
-                "\nArguments:\n"
-                "1. \"key\"             (string, required) The zkey (see exportsaplingkey)\n"
-                "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
-                "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
-                "\nNote: This call can take minutes to complete if rescan is true.\n"
+                                        "\nArguments:\n"
+                                        "1. \"key\"             (string, required) The zkey (see exportsaplingkey)\n"
+                                        "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
+                                        "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
+                                        "\nNote: This call can take minutes to complete if rescan is true.\n"
 
-                "\nResult:\n"
-                "{\n"
-                "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the spending key (the default address).\n"
-                "}\n"
+                                        "\nResult:\n"
+                                        "{\n"
+                                        "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the spending key (the default address).\n"
+                                        "}\n"
 
-                "\nExamples:\n"
-                "\nExport a zkey\n"
-                + HelpExampleCli("exportsaplingkey", "\"myaddress\"") +
-                "\nImport the key with rescan\n"
-                + HelpExampleCli("importsaplingkey", "\"mykey\"") +
-                "\nImport the key with partial rescan\n"
-                + HelpExampleCli("importsaplingkey", "\"mykey\" whenkeyisnew 30000") +
-                "\nRe-import the key with longer partial rescan\n"
-                + HelpExampleCli("importsaplingkey", "\"mykey\" yes 20000") +
-                "\nAs a JSON-RPC call\n"
-                + HelpExampleRpc("importsaplingkey", "\"mykey\", \"no\"")
-        );
+                                        "\nExamples:\n"
+                                        "\nExport a zkey\n" +
+            HelpExampleCli("exportsaplingkey", "\"myaddress\"") +
+            "\nImport the key with rescan\n" + HelpExampleCli("importsaplingkey", "\"mykey\"") +
+            "\nImport the key with partial rescan\n" + HelpExampleCli("importsaplingkey", "\"mykey\" whenkeyisnew 30000") +
+            "\nRe-import the key with longer partial rescan\n" + HelpExampleCli("importsaplingkey", "\"mykey\" yes 20000") +
+            "\nAs a JSON-RPC call\n" + HelpExampleRpc("importsaplingkey", "\"mykey\", \"no\""));
 
     EnsureWallet();
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -774,7 +760,7 @@ UniValue importsaplingkey(const JSONRPCRequest& request)
 
     libzcash::SaplingExtendedSpendingKey saplingSpendingKey = *boost::get<libzcash::SaplingExtendedSpendingKey>(&spendingkey);
     UniValue result(UniValue::VOBJ);
-    result.pushKV("address", KeyIO::EncodePaymentAddress( saplingSpendingKey.DefaultAddress()));
+    result.pushKV("address", KeyIO::EncodePaymentAddress(saplingSpendingKey.DefaultAddress()));
 
     // Sapling support
     auto addResult = pwalletMain->GetSaplingScriptPubKeyMan()->AddSpendingKeyToWallet(Params().GetConsensus(), saplingSpendingKey, -1);
@@ -801,33 +787,28 @@ UniValue importsaplingviewingkey(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 3)
         throw std::runtime_error(
-                "importsaplingviewingkey \"vkey\" ( rescan startHeight )\n"
-                "\nAdds a viewing key (as returned by exportsaplingviewingkey) to your wallet.\n"
-                + HelpRequiringPassphrase() + "\n"
+            "importsaplingviewingkey \"vkey\" ( rescan startHeight )\n"
+            "\nAdds a viewing key (as returned by exportsaplingviewingkey) to your wallet.\n" +
+            HelpRequiringPassphrase() + "\n"
 
-                "\nArguments:\n"
-                "1. \"vkey\"             (string, required) The viewing key (see exportsaplingviewingkey)\n"
-                "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
-                "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
-                "\nNote: This call can take minutes to complete if rescan is true.\n"
+                                        "\nArguments:\n"
+                                        "1. \"vkey\"             (string, required) The viewing key (see exportsaplingviewingkey)\n"
+                                        "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
+                                        "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
+                                        "\nNote: This call can take minutes to complete if rescan is true.\n"
 
-                "\nResult:\n"
-                "{\n"
-                "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the viewing key (for Sapling, this is the default address).\n"
-                "}\n"
+                                        "\nResult:\n"
+                                        "{\n"
+                                        "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the viewing key (for Sapling, this is the default address).\n"
+                                        "}\n"
 
-                "\nExamples:\n"
-                "\nImport a viewing key\n"
-                + HelpExampleCli("importsaplingviewingkey", "\"vkey\"") +
-                "\nImport the viewing key without rescan\n"
-                + HelpExampleCli("importsaplingviewingkey", "\"vkey\", no") +
-                "\nImport the viewing key with partial rescan\n"
-                + HelpExampleCli("importsaplingviewingkey", "\"vkey\" whenkeyisnew 30000") +
-                "\nRe-import the viewing key with longer partial rescan\n"
-                + HelpExampleCli("importsaplingviewingkey", "\"vkey\" yes 20000") +
-                "\nAs a JSON-RPC call\n"
-                + HelpExampleRpc("importsaplingviewingkey", "\"vkey\", \"no\"")
-        );
+                                        "\nExamples:\n"
+                                        "\nImport a viewing key\n" +
+            HelpExampleCli("importsaplingviewingkey", "\"vkey\"") +
+            "\nImport the viewing key without rescan\n" + HelpExampleCli("importsaplingviewingkey", "\"vkey\", no") +
+            "\nImport the viewing key with partial rescan\n" + HelpExampleCli("importsaplingviewingkey", "\"vkey\" whenkeyisnew 30000") +
+            "\nRe-import the viewing key with longer partial rescan\n" + HelpExampleCli("importsaplingviewingkey", "\"vkey\" yes 20000") +
+            "\nAs a JSON-RPC call\n" + HelpExampleRpc("importsaplingviewingkey", "\"vkey\", \"no\""));
 
     EnsureWallet();
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -845,8 +826,8 @@ UniValue importsaplingviewingkey(const JSONRPCRequest& request)
                 fRescan = false;
             } else if (rescan.compare("yes") != 0) {
                 throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "rescan must be \"yes\", \"no\" or \"whenkeyisnew\"");
+                    RPC_INVALID_PARAMETER,
+                    "rescan must be \"yes\", \"no\" or \"whenkeyisnew\"");
             }
         }
     }
@@ -872,8 +853,8 @@ UniValue importsaplingviewingkey(const JSONRPCRequest& request)
     auto addResult = pwalletMain->GetSaplingScriptPubKeyMan()->AddViewingKeyToWallet(efvk);
     if (addResult == SpendingKeyExists) {
         throw JSONRPCError(
-                RPC_WALLET_ERROR,
-                "The wallet already contains the private key for this viewing key");
+            RPC_WALLET_ERROR,
+            "The wallet already contains the private key for this viewing key");
     } else if (addResult == KeyAlreadyExists && fIgnoreExistingKey) {
         return result;
     }
@@ -894,21 +875,19 @@ UniValue exportsaplingviewingkey(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
         throw std::runtime_error(
-                "exportsaplingviewingkey \"shield_addr\"\n"
-                "\nReveals the viewing key corresponding to 'shield_addr'.\n"
-                "Then the importsaplingviewingkey can be used with this output\n"
-                + HelpRequiringPassphrase() + "\n"
+            "exportsaplingviewingkey \"shield_addr\"\n"
+            "\nReveals the viewing key corresponding to 'shield_addr'.\n"
+            "Then the importsaplingviewingkey can be used with this output\n" +
+            HelpRequiringPassphrase() + "\n"
 
-                "\nArguments:\n"
-                "1. \"shield_addr\"   (string, required) The shield addr for the viewing key\n"
+                                        "\nArguments:\n"
+                                        "1. \"shield_addr\"   (string, required) The shield addr for the viewing key\n"
 
-                "\nResult:\n"
-                "\"vkey\"                  (string) The viewing key\n"
+                                        "\nResult:\n"
+                                        "\"vkey\"                  (string) The viewing key\n"
 
-                "\nExamples:\n"
-                + HelpExampleCli("exportsaplingviewingkey", "\"myaddress\"")
-                + HelpExampleRpc("exportsaplingviewingkey", "\"myaddress\"")
-        );
+                                        "\nExamples:\n" +
+            HelpExampleCli("exportsaplingviewingkey", "\"myaddress\"") + HelpExampleRpc("exportsaplingviewingkey", "\"myaddress\""));
 
     EnsureWallet();
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -920,7 +899,7 @@ UniValue exportsaplingviewingkey(const JSONRPCRequest& request)
     if (!IsValidPaymentAddress(address)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid shield addr");
     }
-    const libzcash::SaplingPaymentAddress &sapAddr = *boost::get<libzcash::SaplingPaymentAddress>(&address);
+    const libzcash::SaplingPaymentAddress& sapAddr = *boost::get<libzcash::SaplingPaymentAddress>(&address);
     auto vk = pwalletMain->GetSaplingScriptPubKeyMan()->GetViewingKeyForPaymentAddress(sapAddr);
     if (vk) {
         return KeyIO::EncodeViewingKey(vk.get());
@@ -933,21 +912,19 @@ UniValue exportsaplingkey(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
         throw std::runtime_error(
-                "exportsaplingkey \"shield_addr\"\n"
-                "\nReveals the key corresponding to the 'shield_addr'.\n"
-                "Then the importsaplingkey can be used with this output\n"
-                + HelpRequiringPassphrase() + "\n"
+            "exportsaplingkey \"shield_addr\"\n"
+            "\nReveals the key corresponding to the 'shield_addr'.\n"
+            "Then the importsaplingkey can be used with this output\n" +
+            HelpRequiringPassphrase() + "\n"
 
-                "\nArguments:\n"
-                "1. \"addr\"   (string, required) The shield addr for the private key\n"
+                                        "\nArguments:\n"
+                                        "1. \"addr\"   (string, required) The shield addr for the private key\n"
 
-                "\nResult:\n"
-                "\"key\"                  (string) The private key\n"
+                                        "\nResult:\n"
+                                        "\"key\"                  (string) The private key\n"
 
-                "\nExamples:\n"
-                + HelpExampleCli("exportsaplingkey", "\"myaddress\"")
-                + HelpExampleRpc("exportsaplingkey", "\"myaddress\"")
-        );
+                                        "\nExamples:\n" +
+            HelpExampleCli("exportsaplingkey", "\"myaddress\"") + HelpExampleRpc("exportsaplingkey", "\"myaddress\""));
 
     EnsureWallet();
 

@@ -1,4 +1,5 @@
 // Copyright (c) 2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -6,18 +7,18 @@
 #include "ui_openuridialog.h"
 
 #include "guiutil.h"
+#include "qt/posante/qtutils.h"
 #include "walletmodel.h"
-#include "qt/pivx/qtutils.h"
 
-#include <QUrl>
 #include <QFile>
+#include <QUrl>
 
 OpenURIDialog::OpenURIDialog(QWidget* parent) : QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
                                                 ui(new Ui::OpenURIDialog)
 {
     ui->setupUi(this);
     this->setStyleSheet(parent->styleSheet());
-    ui->uriEdit->setPlaceholderText("pivx:");
+    ui->uriEdit->setPlaceholderText("posante:");
 
     ui->labelSubtitle->setText("URI");
     setCssProperty(ui->labelSubtitle, "text-title2-dialog");
@@ -33,7 +34,7 @@ OpenURIDialog::OpenURIDialog(QWidget* parent) : QDialog(parent, Qt::WindowSystem
     connect(ui->pushButtonCancel, &QPushButton::clicked, this, &OpenURIDialog::close);
 }
 
-void OpenURIDialog::showEvent(QShowEvent *event)
+void OpenURIDialog::showEvent(QShowEvent* event)
 {
     ui->uriEdit->setFocus();
 }
@@ -66,12 +67,12 @@ void OpenURIDialog::on_selectFileButton_clicked()
         return;
 
     QFile file(filename);
-    if(!file.exists()) {
+    if (!file.exists()) {
         inform(tr("File not found"));
         return;
     }
 
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QByteArray r = file.readAll();
         if (r.size() > 200) {
             inform(tr("Parsed data too large"));
@@ -79,14 +80,15 @@ void OpenURIDialog::on_selectFileButton_clicked()
         }
 
         QString str = QString::fromStdString(std::string(r.constData(), r.length()));
-        if (!str.startsWith("pivx")) {
-            inform(tr("Invalid URI, not starting with \"pivx\" prefix"));
+        if (!str.startsWith("posante")) {
+            inform(tr("Invalid URI, not starting with \"posante\" prefix"));
         }
         ui->uriEdit->setText(str);
     }
 }
 
-void OpenURIDialog::inform(const QString& str) {
+void OpenURIDialog::inform(const QString& str)
+{
     if (!snackBar) snackBar = new SnackBar(nullptr, this);
     snackBar->setText(str);
     snackBar->resize(this->width(), snackBar->height());

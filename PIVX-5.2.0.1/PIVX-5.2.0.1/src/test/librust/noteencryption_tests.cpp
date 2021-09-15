@@ -1,9 +1,10 @@
 // Copyright (c) 2016-2020 The ZCash developers
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include <array>
 #include <stdexcept>
@@ -31,7 +32,7 @@ BOOST_AUTO_TEST_CASE(note_plain_text_test)
     std::array<unsigned char, ZC_MEMO_SIZE> memo;
     for (size_t i = 0; i < ZC_MEMO_SIZE; i++) {
         // Fill the message with dummy data
-        memo[i] = (unsigned char) i;
+        memo[i] = (unsigned char)i;
     }
 
     libzcash::SaplingNote note(addr, 39393);
@@ -58,16 +59,14 @@ BOOST_AUTO_TEST_CASE(note_plain_text_test)
         ct,
         ivk,
         epk,
-        uint256()
-    ));
+        uint256()));
 
     // Try to decrypt with correct commitment
     auto foo = libzcash::SaplingNotePlaintext::decrypt(
         ct,
         ivk,
         epk,
-        cmu
-    );
+        cmu);
 
     if (!foo) {
         BOOST_ERROR("SaplingNotePlaintext decrypt failed");
@@ -107,16 +106,14 @@ BOOST_AUTO_TEST_CASE(note_plain_text_test)
         ovk,
         cv,
         cm,
-        encryptor
-    );
+        encryptor);
 
     auto decrypted_out_ct = out_pt.decrypt(
         out_ct,
         ovk,
         cv,
         cm,
-        encryptor.get_epk()
-    );
+        encryptor.get_epk());
 
     if (!decrypted_out_ct) {
         BOOST_ERROR("SaplingOutgoingPlaintext decrypt failed");
@@ -133,8 +130,7 @@ BOOST_AUTO_TEST_CASE(note_plain_text_test)
         epk,
         decrypted_out_ct_unwrapped.esk,
         decrypted_out_ct_unwrapped.pk_d,
-        uint256()
-    ));
+        uint256()));
 
     // Test sender can decrypt the note ciphertext.
     foo = libzcash::SaplingNotePlaintext::decrypt(
@@ -142,8 +138,7 @@ BOOST_AUTO_TEST_CASE(note_plain_text_test)
         epk,
         decrypted_out_ct_unwrapped.esk,
         decrypted_out_ct_unwrapped.pk_d,
-        cmu
-    );
+        cmu);
 
     if (!foo) {
         BOOST_ERROR("Sender decrypt note ciphertext failed.");
@@ -169,14 +164,14 @@ BOOST_AUTO_TEST_CASE(SaplingApi_test)
     // Blob of stuff we're encrypting
     std::array<unsigned char, ZC_SAPLING_ENCPLAINTEXT_SIZE> message;
     for (size_t i = 0; i < ZC_SAPLING_ENCPLAINTEXT_SIZE; i++) {
-    // Fill the message with dummy data
-    message[i] = (unsigned char) i;
+        // Fill the message with dummy data
+        message[i] = (unsigned char)i;
     }
 
     std::array<unsigned char, ZC_SAPLING_OUTPLAINTEXT_SIZE> small_message;
     for (size_t i = 0; i < ZC_SAPLING_OUTPLAINTEXT_SIZE; i++) {
-    // Fill the message with dummy data
-    small_message[i] = (unsigned char) i;
+        // Fill the message with dummy data
+        small_message[i] = (unsigned char)i;
     }
 
     // Invalid diversifier
@@ -185,9 +180,8 @@ BOOST_AUTO_TEST_CASE(SaplingApi_test)
     // Encrypt to pk_1
     auto enc = *libzcash::SaplingNoteEncryption::FromDiversifier(pk_1.d);
     auto ciphertext_1 = *enc.encrypt_to_recipient(
-            pk_1.pk_d,
-            message
-    );
+        pk_1.pk_d,
+        message);
     auto epk_1 = enc.get_epk();
     {
         uint256 test_epk;
@@ -198,144 +192,127 @@ BOOST_AUTO_TEST_CASE(SaplingApi_test)
     auto cv_1 = random_uint256();
     auto cm_1 = random_uint256();
     auto out_ciphertext_1 = enc.encrypt_to_ourselves(
-            sk.ovk,
-            cv_1,
-            cm_1,
-            small_message
-    );
+        sk.ovk,
+        cv_1,
+        cm_1,
+        small_message);
 
     // Encrypt to pk_2
     enc = *libzcash::SaplingNoteEncryption::FromDiversifier(pk_2.d);
     auto ciphertext_2 = *enc.encrypt_to_recipient(
-            pk_2.pk_d,
-            message
-    );
+        pk_2.pk_d,
+        message);
     auto epk_2 = enc.get_epk();
 
     auto cv_2 = random_uint256();
     auto cm_2 = random_uint256();
     auto out_ciphertext_2 = enc.encrypt_to_ourselves(
-            sk.ovk,
-            cv_2,
-            cm_2,
-            small_message
-    );
+        sk.ovk,
+        cv_2,
+        cm_2,
+        small_message);
 
     // Test nonce-reuse resistance of API
     {
         auto tmp_enc = *libzcash::SaplingNoteEncryption::FromDiversifier(pk_1.d);
 
         tmp_enc.encrypt_to_recipient(
-                pk_1.pk_d,
-                message
-                );
+            pk_1.pk_d,
+            message);
 
         BOOST_CHECK_THROW(tmp_enc.encrypt_to_recipient(
-                pk_1.pk_d,
-                message
-                ), std::logic_error);
+                              pk_1.pk_d,
+                              message),
+            std::logic_error);
 
         tmp_enc.encrypt_to_ourselves(
-                sk.ovk,
-                cv_2,
-                cm_2,
-                small_message
-                );
+            sk.ovk,
+            cv_2,
+            cm_2,
+            small_message);
 
         BOOST_CHECK_THROW(tmp_enc.encrypt_to_ourselves(
-                sk.ovk,
-                cv_2,
-                cm_2,
-                small_message
-                ), std::logic_error);
+                              sk.ovk,
+                              cv_2,
+                              cm_2,
+                              small_message),
+            std::logic_error);
     }
 
     // Try to decrypt
     auto plaintext_1 = *AttemptSaplingEncDecryption(
-            ciphertext_1,
-            ivk,
-            epk_1
-    );
+        ciphertext_1,
+        ivk,
+        epk_1);
     BOOST_CHECK(message == plaintext_1);
 
     auto small_plaintext_1 = *libzcash::AttemptSaplingOutDecryption(
-            out_ciphertext_1,
-            sk.ovk,
-            cv_1,
-            cm_1,
-            epk_1
-    );
+        out_ciphertext_1,
+        sk.ovk,
+        cv_1,
+        cm_1,
+        epk_1);
     BOOST_CHECK(small_message == small_plaintext_1);
 
     auto plaintext_2 = *AttemptSaplingEncDecryption(
-            ciphertext_2,
-            ivk,
-            epk_2
-    );
+        ciphertext_2,
+        ivk,
+        epk_2);
     BOOST_CHECK(message == plaintext_2);
 
     auto small_plaintext_2 = *libzcash::AttemptSaplingOutDecryption(
-            out_ciphertext_2,
-            sk.ovk,
-            cv_2,
-            cm_2,
-            epk_2
-    );
+        out_ciphertext_2,
+        sk.ovk,
+        cv_2,
+        cm_2,
+        epk_2);
     BOOST_CHECK(small_message == small_plaintext_2);
 
     // Try to decrypt out ciphertext with wrong key material
     BOOST_CHECK(!libzcash::AttemptSaplingOutDecryption(
-            out_ciphertext_1,
-            random_uint256(),
-            cv_1,
-            cm_1,
-            epk_1
-    ));
+        out_ciphertext_1,
+        random_uint256(),
+        cv_1,
+        cm_1,
+        epk_1));
     BOOST_CHECK(!libzcash::AttemptSaplingOutDecryption(
-            out_ciphertext_1,
-            sk.ovk,
-            random_uint256(),
-            cm_1,
-            epk_1
-    ));
+        out_ciphertext_1,
+        sk.ovk,
+        random_uint256(),
+        cm_1,
+        epk_1));
     BOOST_CHECK(!libzcash::AttemptSaplingOutDecryption(
-            out_ciphertext_1,
-            sk.ovk,
-            cv_1,
-            random_uint256(),
-            epk_1
-    ));
+        out_ciphertext_1,
+        sk.ovk,
+        cv_1,
+        random_uint256(),
+        epk_1));
     BOOST_CHECK(!libzcash::AttemptSaplingOutDecryption(
-            out_ciphertext_1,
-            sk.ovk,
-            cv_1,
-            cm_1,
-            random_uint256()
-    ));
+        out_ciphertext_1,
+        sk.ovk,
+        cv_1,
+        cm_1,
+        random_uint256()));
 
     // Try to decrypt with wrong ephemeral key
     BOOST_CHECK(!AttemptSaplingEncDecryption(
-            ciphertext_1,
-            ivk,
-            epk_2
-    ));
+        ciphertext_1,
+        ivk,
+        epk_2));
     BOOST_CHECK(!AttemptSaplingEncDecryption(
-            ciphertext_2,
-            ivk,
-            epk_1
-    ));
+        ciphertext_2,
+        ivk,
+        epk_1));
 
     // Try to decrypt with wrong ivk
     BOOST_CHECK(!libzcash::AttemptSaplingEncDecryption(
-            ciphertext_1,
-            uint256(),
-            epk_1
-    ));
+        ciphertext_1,
+        uint256(),
+        epk_1));
     BOOST_CHECK(!libzcash::AttemptSaplingEncDecryption(
-            ciphertext_2,
-            uint256(),
-            epk_2
-    ));
+        ciphertext_2,
+        uint256(),
+        epk_2));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

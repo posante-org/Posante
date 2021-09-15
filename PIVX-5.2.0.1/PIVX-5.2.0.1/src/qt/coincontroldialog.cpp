@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -18,7 +19,7 @@
 #include "wallet/wallet.h"
 #include "walletmodel.h"
 
-#include "qt/pivx/qtutils.h"
+#include "qt/posante/qtutils.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -31,7 +32,8 @@
 #include <QTreeWidget>
 
 
-bool CCoinControlWidgetItem::operator<(const QTreeWidgetItem &other) const {
+bool CCoinControlWidgetItem::operator<(const QTreeWidgetItem& other) const
+{
     int column = treeWidget()->sortColumn();
     if (column == CoinControlDialog::COLUMN_AMOUNT || column == CoinControlDialog::COLUMN_DATE || column == CoinControlDialog::COLUMN_CONFIRMATIONS)
         return data(column, Qt::UserRole).toLongLong() < other.data(column, Qt::UserRole).toLongLong();
@@ -40,9 +42,9 @@ bool CCoinControlWidgetItem::operator<(const QTreeWidgetItem &other) const {
 
 
 CoinControlDialog::CoinControlDialog(QWidget* parent, bool _forDelegation) : QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
-                                                        ui(new Ui::CoinControlDialog),
-                                                        model(0),
-                                                        forDelegation(_forDelegation)
+                                                                             ui(new Ui::CoinControlDialog),
+                                                                             model(0),
+                                                                             forDelegation(_forDelegation)
 {
     coinControl = new CCoinControl();
     ui->setupUi(this);
@@ -50,37 +52,37 @@ CoinControlDialog::CoinControlDialog(QWidget* parent, bool _forDelegation) : QDi
     /* Open CSS when configured */
     this->setStyleSheet(GUIUtil::loadStyleSheet());
     setCssProperty({ui->frameContainer,
-                    ui->layoutAmount,
-                    ui->layoutAfter,
-                    ui->layoutBytes,
-                    ui->layoutChange,
-                    ui->layoutDust,
-                    ui->layoutFee,
-                    ui->layoutQuantity
-                    }, "container-border-purple");
+                       ui->layoutAmount,
+                       ui->layoutAfter,
+                       ui->layoutBytes,
+                       ui->layoutChange,
+                       ui->layoutDust,
+                       ui->layoutFee,
+                       ui->layoutQuantity},
+        "container-border-purple");
 
     // Title
     ui->labelTitle->setProperty("cssClass", "text-title-dialog");
 
     // Label Style
     setCssProperty({ui->labelCoinControlAfterFeeText,
-                    ui->labelCoinControlAmountText,
-                    ui->labelCoinControlBytesText,
-                    ui->labelCoinControlChangeText,
-                    ui->labelCoinControlLowOutputText,
-                    ui->labelCoinControlFeeText,
-                    ui->labelCoinControlQuantityText
-                    }, "text-main-purple");
+                       ui->labelCoinControlAmountText,
+                       ui->labelCoinControlBytesText,
+                       ui->labelCoinControlChangeText,
+                       ui->labelCoinControlLowOutputText,
+                       ui->labelCoinControlFeeText,
+                       ui->labelCoinControlQuantityText},
+        "text-main-purple");
 
     // Value Style
     setCssProperty({ui->labelCoinControlAfterFee,
-                    ui->labelCoinControlAmount,
-                    ui->labelCoinControlBytes,
-                    ui->labelCoinControlChange,
-                    ui->labelCoinControlLowOutput,
-                    ui->labelCoinControlFee,
-                    ui->labelCoinControlQuantity
-                    }, "text-main-purple");
+                       ui->labelCoinControlAmount,
+                       ui->labelCoinControlBytes,
+                       ui->labelCoinControlChange,
+                       ui->labelCoinControlLowOutput,
+                       ui->labelCoinControlFee,
+                       ui->labelCoinControlQuantity},
+        "text-main-purple");
 
     ui->groupBox_2->setProperty("cssClass", "group-box");
     ui->treeWidget->setProperty("cssClass", "table-tree");
@@ -118,16 +120,14 @@ CoinControlDialog::CoinControlDialog(QWidget* parent, bool _forDelegation) : QDi
     connect(unlockAction, &QAction::triggered, this, &CoinControlDialog::unlockCoin);
 
     // clipboard actions
-    setCssProperty({
-        ui->pushButtonAmount,
-        ui->pushButtonQuantity,
-        ui->pushButtonFee,
-        ui->pushButtonAlterFee,
-        ui->pushButtonBytes,
-        ui->pushButtonChange,
-        ui->pushButtonDust
-        }, "ic-copy-big"
-    );
+    setCssProperty({ui->pushButtonAmount,
+                       ui->pushButtonQuantity,
+                       ui->pushButtonFee,
+                       ui->pushButtonAlterFee,
+                       ui->pushButtonBytes,
+                       ui->pushButtonChange,
+                       ui->pushButtonDust},
+        "ic-copy-big");
 
     connect(ui->pushButtonQuantity, &QPushButton::clicked, this, &CoinControlDialog::clipboardQuantity);
     connect(ui->pushButtonAmount, &QPushButton::clicked, this, &CoinControlDialog::clipboardAmount);
@@ -169,8 +169,8 @@ CoinControlDialog::CoinControlDialog(QWidget* parent, bool _forDelegation) : QDi
     ui->treeWidget->setColumnWidth(COLUMN_ADDRESS, 310);
     ui->treeWidget->setColumnWidth(COLUMN_DATE, 145);
     ui->treeWidget->setColumnWidth(COLUMN_CONFIRMATIONS, 65);
-    ui->treeWidget->setColumnHidden(COLUMN_TXHASH, true);         // store transacton hash in this column, but dont show it
-    ui->treeWidget->setColumnHidden(COLUMN_VOUT_INDEX, true);     // store vout index in this column, but dont show it
+    ui->treeWidget->setColumnHidden(COLUMN_TXHASH, true);     // store transacton hash in this column, but dont show it
+    ui->treeWidget->setColumnHidden(COLUMN_VOUT_INDEX, true); // store vout index in this column, but dont show it
 
     ui->treeWidget->header()->setStretchLastSection(true);
     // default view is sorted by amount desc
@@ -182,7 +182,7 @@ CoinControlDialog::CoinControlDialog(QWidget* parent, bool _forDelegation) : QDi
         ui->radioTreeMode->setChecked(true);
         ui->treeWidget->setRootIsDecorated(true);
         ui->radioTreeMode->click();
-    }else{
+    } else {
         ui->radioListMode->setChecked(true);
         ui->treeWidget->setRootIsDecorated(false);
     }
@@ -448,8 +448,8 @@ void CoinControlDialog::viewItemChanged(QTreeWidgetItem* item, int column)
 {
     if (column == COLUMN_CHECKBOX && item->text(COLUMN_TXHASH).length() == 64) { // transaction hash is 64 characters (this means its a child node, so its not a parent node in tree mode)
         BaseOutPoint outpt(uint256(item->text(COLUMN_TXHASH).toStdString()),
-                           item->text(COLUMN_VOUT_INDEX).toUInt(),
-                           fSelectTransparent);
+            item->text(COLUMN_VOUT_INDEX).toUInt(),
+            fSelectTransparent);
         if (item->checkState(COLUMN_CHECKBOX) == Qt::Unchecked)
             coinControl->UnSelect(outpt);
         else if (item->isDisabled()) // locked (this happens if "check all" through parent node)
@@ -508,8 +508,7 @@ TotalAmounts CoinControlDialog::getTotals() const
         // Amount
         t.nAmount += out.value;
         // Bytes
-        t.nBytes += (fSelectTransparent ? (CTXIN_SPEND_DUST_SIZE + (out.isP2CS ? 1 : 0))
-                                      : SPENDDESCRIPTION_SIZE);
+        t.nBytes += (fSelectTransparent ? (CTXIN_SPEND_DUST_SIZE + (out.isP2CS ? 1 : 0)) : SPENDDESCRIPTION_SIZE);
     }
 
     // selected inputs
@@ -532,14 +531,15 @@ TotalAmounts CoinControlDialog::getTotals() const
         for (const auto& a : payAmounts) {
             t.nPayAmount += a.first;
             bool shieldedOut = a.second;
-            if (shieldedOut) nShieldOuts++;
-            else nTransOuts++;
+            if (shieldedOut)
+                nShieldOuts++;
+            else
+                nTransOuts++;
             if (a.first > 0 && !t.fDust) {
                 if (a.first < (shieldedOut ? GetShieldedDustThreshold(minRelayTxFee) : GetDustThreshold(minRelayTxFee)))
                     t.fDust = true;
             }
-            t.nBytes += (shieldedOut ? OUTPUTDESCRIPTION_SIZE
-                                   : (forDelegation ? P2CS_OUT_SIZE : CTXOUT_REGULAR_SIZE));
+            t.nBytes += (shieldedOut ? OUTPUTDESCRIPTION_SIZE : (forDelegation ? P2CS_OUT_SIZE : CTXOUT_REGULAR_SIZE));
         }
 
         // Shielded txes must include binding sig and valueBalance
@@ -557,7 +557,7 @@ TotalAmounts CoinControlDialog::getTotals() const
         t.nBytes += 8;
 
         // vin/vout len sizes
-        t.nBytes += (GetCompactSize(nTransIns) +  GetCompactSize(nTransOuts));
+        t.nBytes += (GetCompactSize(nTransIns) + GetCompactSize(nTransOuts));
 
         // Fee (default K fixed for shielded fee for now)
         t.nPayFee = GetMinRelayFee(t.nBytes, false) * (isShieldedTx ? DEFAULT_SHIELDEDTXFEE_K : 1);
@@ -589,8 +589,8 @@ void CoinControlDialog::updateLabels()
         return;
 
     ui->labelTitle->setText(fSelectTransparent ?
-            "Select PIV Outputs to Spend" :
-            "Select Shielded PIV to Spend");
+                                "Select POSA Outputs to Spend" :
+                                "Select Shielded POSA to Spend");
 
     const TotalAmounts& t = getTotals();
 
@@ -600,7 +600,7 @@ void CoinControlDialog::updateLabels()
     updatePushButtonSelectAll(coinControl->QuantitySelected() * 2 > nSelectableInputs);
 
     // actually update labels
-    int nDisplayUnit = BitcoinUnits::PIV;
+    int nDisplayUnit = BitcoinUnits::POSA;
     if (model && model->getOptionsModel())
         nDisplayUnit = model->getOptionsModel()->getDisplayUnit();
 
@@ -627,16 +627,15 @@ void CoinControlDialog::updateLabels()
     }
 
     // turn labels "red"
-    ui->labelCoinControlBytes->setStyleSheet((t.nBytes >= MAX_FREE_TRANSACTION_CREATE_SIZE) ? "color:red;" : "");     // Bytes >= 1000
-    ui->labelCoinControlLowOutput->setStyleSheet((t.fDust) ? "color:red;" : "");                                      // Dust = "yes"
+    ui->labelCoinControlBytes->setStyleSheet((t.nBytes >= MAX_FREE_TRANSACTION_CREATE_SIZE) ? "color:red;" : ""); // Bytes >= 1000
+    ui->labelCoinControlLowOutput->setStyleSheet((t.fDust) ? "color:red;" : "");                                  // Dust = "yes"
 
     // tool tips
     QString toolTip1 = tr("This label turns red, if the transaction size is greater than 1000 bytes.") + "<br /><br />";
     toolTip1 += tr("This means a fee of at least %1 per kB is required.").arg(BitcoinUnits::formatWithUnit(nDisplayUnit, CWallet::GetRequiredFee(1000))) + "<br /><br />";
     toolTip1 += tr("Can vary +/- 1 byte per input.");
 
-    QString toolTip3 = tr("This label turns red, if recipient receives an amount smaller than %1 (transparent) / %2 (shield)."
-            ).arg(BitcoinUnits::formatWithUnit(nDisplayUnit, GetDustThreshold(minRelayTxFee))).arg(BitcoinUnits::formatWithUnit(nDisplayUnit, GetShieldedDustThreshold(minRelayTxFee)));
+    QString toolTip3 = tr("This label turns red, if recipient receives an amount smaller than %1 (transparent) / %2 (shield).").arg(BitcoinUnits::formatWithUnit(nDisplayUnit, GetDustThreshold(minRelayTxFee))).arg(BitcoinUnits::formatWithUnit(nDisplayUnit, GetShieldedDustThreshold(minRelayTxFee)));
 
     // how many satoshis the estimated fee can vary per byte we guess wrong
     double dFeeVary;
@@ -664,19 +663,19 @@ void CoinControlDialog::updateLabels()
 }
 
 void CoinControlDialog::loadAvailableCoin(bool treeMode,
-                                          CCoinControlWidgetItem* itemWalletAddress,
-                                          QFlags<Qt::ItemFlag> flgCheckbox,
-                                          QFlags<Qt::ItemFlag> flgTristate,
-                                          int nDisplayUnit,
-                                          const QString& sWalletAddress,
-                                          const Optional<QString>& stakerAddress,
-                                          const QString& sWalletLabel,
-                                          const uint256& txhash,
-                                          const uint32_t outIndex,
-                                          const CAmount nValue,
-                                          const int64_t nTime,
-                                          const int nDepth,
-                                          const bool isChange)
+    CCoinControlWidgetItem* itemWalletAddress,
+    QFlags<Qt::ItemFlag> flgCheckbox,
+    QFlags<Qt::ItemFlag> flgTristate,
+    int nDisplayUnit,
+    const QString& sWalletAddress,
+    const Optional<QString>& stakerAddress,
+    const QString& sWalletLabel,
+    const uint256& txhash,
+    const uint32_t outIndex,
+    const CAmount nValue,
+    const int64_t nTime,
+    const int nDepth,
+    const bool isChange)
 {
     CCoinControlWidgetItem* itemOutput;
     if (treeMode)
@@ -686,10 +685,10 @@ void CoinControlDialog::loadAvailableCoin(bool treeMode,
     itemOutput->setFlags(flgCheckbox);
     itemOutput->setCheckState(COLUMN_CHECKBOX, Qt::Unchecked);
 
-    // if listMode or change => show PIVX address. In tree mode, address is not shown again for direct wallet address outputs
+    // if listMode or change => show Posante address. In tree mode, address is not shown again for direct wallet address outputs
     if (!treeMode) {
         itemOutput->setText(COLUMN_ADDRESS, sWalletAddress);
-    }else {
+    } else {
         itemOutput->setToolTip(COLUMN_ADDRESS, sWalletAddress);
     }
 
@@ -705,16 +704,16 @@ void CoinControlDialog::loadAvailableCoin(bool treeMode,
     // amount
     itemOutput->setText(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, nValue));
     itemOutput->setToolTip(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, nValue));
-    itemOutput->setData(COLUMN_AMOUNT, Qt::UserRole, QVariant((qlonglong) nValue));
+    itemOutput->setData(COLUMN_AMOUNT, Qt::UserRole, QVariant((qlonglong)nValue));
 
     // date
     itemOutput->setText(COLUMN_DATE, GUIUtil::dateTimeStr(nTime));
     itemOutput->setToolTip(COLUMN_DATE, GUIUtil::dateTimeStr(nTime));
-    itemOutput->setData(COLUMN_DATE, Qt::UserRole, QVariant((qlonglong) nTime));
+    itemOutput->setData(COLUMN_DATE, Qt::UserRole, QVariant((qlonglong)nTime));
 
     // confirmations
     itemOutput->setText(COLUMN_CONFIRMATIONS, QString::number(nDepth));
-    itemOutput->setData(COLUMN_CONFIRMATIONS, Qt::UserRole, QVariant((qlonglong) nDepth));
+    itemOutput->setData(COLUMN_CONFIRMATIONS, Qt::UserRole, QVariant((qlonglong)nDepth));
 
     // transaction hash
     itemOutput->setText(COLUMN_TXHASH, QString::fromStdString(txhash.GetHex()));
@@ -759,7 +758,7 @@ void CoinControlDialog::updateView()
 
     int nDisplayUnit = model->getOptionsModel()->getDisplayUnit();
     nSelectableInputs = 0;
-    std::map<WalletModel::ListCoinsKey, std::vector<WalletModel::ListCoinsValue>> mapCoins;
+    std::map<WalletModel::ListCoinsKey, std::vector<WalletModel::ListCoinsValue> > mapCoins;
     model->listCoins(mapCoins, fSelectTransparent);
 
     for (const auto& coins : mapCoins) {
@@ -796,9 +795,9 @@ void CoinControlDialog::updateView()
             nChildren++;
 
             loadAvailableCoin(treeMode, itemWalletAddress, flgCheckbox, flgTristate,
-                              nDisplayUnit, sWalletAddress, stakerAddress, sWalletLabel,
-                              out.txhash, out.outIndex, out.nValue, out.nTime, out.nDepth,
-                              keys.isChange);
+                nDisplayUnit, sWalletAddress, stakerAddress, sWalletLabel,
+                out.txhash, out.outIndex, out.nValue, out.nTime, out.nDepth,
+                keys.isChange);
         }
 
         // amount
@@ -806,7 +805,7 @@ void CoinControlDialog::updateView()
             itemWalletAddress->setText(COLUMN_CHECKBOX, "(" + QString::number(nChildren) + ")");
             itemWalletAddress->setText(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, nSum));
             itemWalletAddress->setToolTip(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, nSum));
-            itemWalletAddress->setData(COLUMN_AMOUNT, Qt::UserRole, QVariant((qlonglong) nSum));
+            itemWalletAddress->setData(COLUMN_AMOUNT, Qt::UserRole, QVariant((qlonglong)nSum));
         }
     }
 

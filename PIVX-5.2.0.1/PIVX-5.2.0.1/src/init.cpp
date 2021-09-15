@@ -5,11 +5,12 @@
 // Copyright (c) 2013-2014 The NovaCoin Developers
 // Copyright (c) 2014-2018 The BlackCoin Developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
 #include "init.h"
@@ -23,59 +24,57 @@
 #include "compat/sanity.h"
 #include "consensus/upgrades.h"
 #include "fs.h"
-#include "httpserver.h"
+#include "guiinterface.h"
+#include "guiinterfaceutil.h"
 #include "httprpc.h"
-#include "invalid.h"
+#include "httpserver.h"
 #include "key.h"
 #include "masternode-payments.h"
 #include "masternodeconfig.h"
 #include "masternodeman.h"
 #include "messagesigner.h"
 #include "miner.h"
-#include "netbase.h"
 #include "net_processing.h"
+#include "netbase.h"
 #include "policy/feerate.h"
 #include "policy/policy.h"
 #include "reverse_iterate.h"
 #include "rpc/register.h"
 #include "rpc/server.h"
+#include "scheduler.h"
 #include "script/sigcache.h"
 #include "script/standard.h"
-#include "scheduler.h"
 #include "spork.h"
 #include "sporkdb.h"
-#include "txdb.h"
 #include "torcontrol.h"
-#include "guiinterface.h"
-#include "guiinterfaceutil.h"
+#include "txdb.h"
 #include "util.h"
-#include "utilmoneystr.h"
 #include "util/threadnames.h"
+#include "utilmoneystr.h"
 #include "validation.h"
 #include "validationinterface.h"
-#include "zpivchain.h"
 
 #ifdef ENABLE_WALLET
 #include "wallet/db.h"
-#include "wallet/wallet.h"
 #include "wallet/rpcwallet.h"
+#include "wallet/wallet.h"
 
 #endif
 #include "warnings.h"
 
 #include <atomic>
 #include <fstream>
+#include <memory>
 #include <stdint.h>
 #include <stdio.h>
-#include <memory>
 
 #ifndef WIN32
 #include <signal.h>
 #endif
 
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
 
@@ -93,7 +92,7 @@ static const bool DEFAULT_PROXYRANDOMIZE = true;
 static const bool DEFAULT_REST_ENABLE = false;
 static const bool DEFAULT_DISABLE_SAFEMODE = false;
 static const bool DEFAULT_STOPAFTERBLOCKIMPORT = false;
-static const bool DEFAULT_MASTERNODE  = false;
+static const bool DEFAULT_MASTERNODE = false;
 static const bool DEFAULT_MNCONFLOCK = true;
 
 std::unique_ptr<CConnman> g_connman;
@@ -121,7 +120,7 @@ enum BindFlags {
 };
 
 static const char* FEE_ESTIMATES_FILENAME = "fee_estimates.dat";
-CClientUIInterface uiInterface;  // Declared but not defined in guiinterface.h
+CClientUIInterface uiInterface; // Declared but not defined in guiinterface.h
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -214,7 +213,7 @@ void PrepareShutdown()
     /// for example if the data directory was found to be locked.
     /// Be sure that anything that writes files or flushes caches only does this if the respective
     /// module was initialized.
-    util::ThreadRename("pivx-shutoff");
+    util::ThreadRename("posante-shutoff");
     mempool.AddTransactionsUpdated(1);
     StopHTTPRPC();
     StopREST();
@@ -293,8 +292,6 @@ void PrepareShutdown()
         pcoinsdbview = NULL;
         delete pblocktree;
         pblocktree = NULL;
-        delete zerocoinDB;
-        zerocoinDB = NULL;
         delete pSporkDB;
         pSporkDB = NULL;
     }
@@ -363,9 +360,10 @@ void HandleSIGHUP(int)
 }
 
 #ifndef WIN32
-static void registerSignalHandler(int signal, void(*handler)(int))
+static void registerSignalHandler(int signal, void (*handler)(int))
 {
-    struct sigaction sa{};
+    struct sigaction sa {
+    };
     sa.sa_handler = handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
@@ -423,7 +421,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-alertnotify=<cmd>", _("Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)"));
     strUsage += HelpMessageOpt("-blocknotify=<cmd>", _("Execute command when the best block changes (%s in cmd is replaced by block hash)"));
     strUsage += HelpMessageOpt("-checkblocks=<n>", strprintf(_("How many blocks to check at startup (default: %u, 0 = all)"), DEFAULT_CHECKBLOCKS));
-    strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), PIVX_CONF_FILENAME));
+    strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), Posante_CONF_FILENAME));
     if (mode == HMM_BITCOIND) {
 #if !defined(WIN32)
         strUsage += HelpMessageOpt("-daemon", _("Run in the background as a daemon and accept commands"));
@@ -445,7 +443,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-persistmempool", strprintf(_("Whether to save the mempool on shutdown and load on restart (default: %u)"), DEFAULT_PERSIST_MEMPOOL));
     strUsage += HelpMessageOpt("-par=<n>", strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"), -GetNumCores(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS));
 #ifndef WIN32
-    strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), PIVX_PID_FILENAME));
+    strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), Posante_PID_FILENAME));
 #endif
     strUsage += HelpMessageOpt("-reindex", _("Rebuild block chain index from current blk000??.dat files") + " " + _("on startup"));
     strUsage += HelpMessageOpt("-resync", _("Delete blockchain folders and resync from scratch") + " " + _("on startup"));
@@ -485,7 +483,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-upnp", strprintf(_("Use UPnP to map the listening port (default: %u)"), DEFAULT_UPNP));
     strUsage += HelpMessageOpt("-whitebind=<addr>", _("Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6"));
     strUsage += HelpMessageOpt("-whitelist=<netmask>", _("Whitelist peers connecting from the given netmask or IP address. Can be specified multiple times.") +
-        " " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway"));
+                                                           " " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway"));
 
 #if ENABLE_WALLET
     strUsage += CWallet::GetWalletHelpString(showDebug);
@@ -523,7 +521,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-nuparams=upgradeName:activationHeight", "Use given activation height for specified network upgrade (regtest-only)");
     }
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
-        _("If <category> is not supplied, output all debugging information.") + _("<category> can be:") + " " + ListLogCategories() + ".");
+                                                        _("If <category> is not supplied, output all debugging information.") + _("<category> can be:") + " " + ListLogCategories() + ".");
     strUsage += HelpMessageOpt("-debugexclude=<category>", _("Exclude debugging information for a category. Can be used in conjunction with -debug=1 to output debug logs for all categories except one or more specified categories."));
     if (showDebug)
         strUsage += HelpMessageOpt("-nodebug", "Turn off debugging messages, same as -debug=0");
@@ -546,14 +544,14 @@ std::string HelpMessage(HelpMessageMode mode)
     }
     strUsage += HelpMessageOpt("-shrinkdebugfile", _("Shrink debug.log file on client startup (default: 1 when no -debug)"));
     AppendParamsHelpMessages(strUsage, showDebug);
-    strUsage += HelpMessageOpt("-litemode=<n>", strprintf(_("Disable all PIVX specific functionality (Masternodes, Budgeting) (0-1, default: %u)"), 0));
+    strUsage += HelpMessageOpt("-litemode=<n>", strprintf(_("Disable all Posante specific functionality (Communitynodes, Budgeting) (0-1, default: %u)"), 0));
 
     strUsage += HelpMessageGroup(_("Masternode options:"));
-    strUsage += HelpMessageOpt("-masternode=<n>", strprintf(_("Enable the client to act as a masternode (0-1, default: %u)"), DEFAULT_MASTERNODE));
-    strUsage += HelpMessageOpt("-mnconf=<file>", strprintf(_("Specify masternode configuration file (default: %s)"), PIVX_MASTERNODE_CONF_FILENAME));
-    strUsage += HelpMessageOpt("-mnconflock=<n>", strprintf(_("Lock masternodes from masternode configuration file (default: %u)"), DEFAULT_MNCONFLOCK));
-    strUsage += HelpMessageOpt("-masternodeprivkey=<n>", _("Set the masternode private key"));
-    strUsage += HelpMessageOpt("-masternodeaddr=<n>", strprintf(_("Set external address:port to get to this masternode (example: %s)"), "128.127.106.235:51472"));
+    strUsage += HelpMessageOpt("-communitynode=<n>", strprintf(_("Enable the client to act as a communitynode (0-1, default: %u)"), DEFAULT_MASTERNODE));
+    strUsage += HelpMessageOpt("-mnconf=<file>", strprintf(_("Specify communitynode configuration file (default: %s)"), Posante_MASTERNODE_CONF_FILENAME));
+    strUsage += HelpMessageOpt("-mnconflock=<n>", strprintf(_("Lock communitynodes from communitynode configuration file (default: %u)"), DEFAULT_MNCONFLOCK));
+    strUsage += HelpMessageOpt("-communitynodeprivkey=<n>", _("Set the communitynode private key"));
+    strUsage += HelpMessageOpt("-communitynodeaddr=<n>", strprintf(_("Set external address:port to get to this communitynode (example: %s)"), "128.127.106.235:2681"));
     strUsage += HelpMessageOpt("-budgetvotemode=<mode>", _("Change automatic finalized budget voting behavior. mode=auto: Vote for only exact finalized budget match to my generated budget. (string, default: auto)"));
 
     strUsage += HelpMessageGroup(_("Node relay options:"));
@@ -598,6 +596,8 @@ std::string LicenseInfo()
            "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2015-%i The PIVX Core Developers"), COPYRIGHT_YEAR)) + "\n" +
            "\n" +
+           FormatParagraph(strprintf(_("Copyright (C) %i The Posante Developers"), COPYRIGHT_YEAR)) + "\n" +
+           "\n" +
            FormatParagraph(_("This is experimental software.")) + "\n" +
            "\n" +
            FormatParagraph(_("Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
@@ -606,9 +606,8 @@ std::string LicenseInfo()
            "\n";
 }
 
-static void BlockNotifyCallback(bool initialSync, const CBlockIndex *pBlockIndex)
+static void BlockNotifyCallback(bool initialSync, const CBlockIndex* pBlockIndex)
 {
-
     if (initialSync || !pBlockIndex)
         return;
 
@@ -627,7 +626,7 @@ static bool fHaveGenesis = false;
 static std::mutex cs_GenesisWait;
 static std::condition_variable condvar_GenesisWait;
 
-static void BlockNotifyGenesisWait(bool, const CBlockIndex *pBlockIndex)
+static void BlockNotifyGenesisWait(bool, const CBlockIndex* pBlockIndex)
 {
     if (pBlockIndex != nullptr) {
         {
@@ -657,7 +656,7 @@ struct CImportingNow {
 
 void ThreadImport(const std::vector<fs::path>& vImportFiles)
 {
-    util::ThreadRename("pivx-loadblk");
+    util::ThreadRename("posante-loadblk");
     ScheduleBatchPriority();
 
     // -reindex
@@ -723,7 +722,7 @@ void ThreadImport(const std::vector<fs::path>& vImportFiles)
 }
 
 /** Sanity checks
- *  Ensure that PIVX is running in a usable environment with all
+ *  Ensure that Posante is running in a usable environment with all
  *  necessary library support.
  */
 bool InitSanityCheck(void)
@@ -746,25 +745,26 @@ bool InitSanityCheck(void)
 
 static void LoadSaplingParams()
 {
-    struct timeval tv_start{}, tv_end{};
+    struct timeval tv_start {
+    }, tv_end{};
     float elapsed;
     gettimeofday(&tv_start, nullptr);
 
     try {
         initZKSNARKS();
-    } catch (std::runtime_error &e) {
+    } catch (std::runtime_error& e) {
         uiInterface.ThreadSafeMessageBox(strprintf(
-                _("Cannot find the Sapling parameters in the following directory:\n"
-                  "%s\n"
-                  "Please run 'sapling-fetch-params' or './util/fetch-params.sh' and then restart."),
-                ZC_GetParamsDir()),
-                                         "", CClientUIInterface::MSG_ERROR);
+                                             _("Cannot find the Sapling parameters in the following directory:\n"
+                                               "%s\n"
+                                               "Please run 'sapling-fetch-params' or './util/fetch-params.sh' and then restart."),
+                                             ZC_GetParamsDir()),
+            "", CClientUIInterface::MSG_ERROR);
         StartShutdown();
         return;
     }
 
     gettimeofday(&tv_end, nullptr);
-    elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
+    elapsed = float(tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_usec - tv_start.tv_usec) / float(1000000);
     LogPrintf("Loaded Sapling parameters in %fs seconds.\n", elapsed);
 }
 
@@ -799,17 +799,18 @@ bool AppInitServers()
     std::terminate();
 }
 
-namespace { // Variables internal to initialization process only
+namespace
+{ // Variables internal to initialization process only
 
-    ServiceFlags nRelevantServices = NODE_NETWORK;
-    int nMaxConnections;
-    int nUserMaxConnections;
-    int nFD;
-    ServiceFlags nLocalServices = NODE_NETWORK;
+ServiceFlags nRelevantServices = NODE_NETWORK;
+int nMaxConnections;
+int nUserMaxConnections;
+int nFD;
+ServiceFlags nLocalServices = NODE_NETWORK;
 
-    std::string strWalletFile;
-    bool fDisableWallet = false;
-}
+std::string strWalletFile;
+bool fDisableWallet = false;
+} // namespace
 
 bool AppInitBasicSetup()
 {
@@ -967,7 +968,7 @@ bool InitNUParams()
     return true;
 }
 
-static std::string ResolveErrMsg(const char * const optname, const std::string& strBind)
+static std::string ResolveErrMsg(const char* const optname, const std::string& strBind)
 {
     return strprintf(_("Cannot resolve -%s address: '%s'"), optname, strBind);
 }
@@ -1007,7 +1008,7 @@ void InitLogging()
 #else
     version_string += " (release build)";
 #endif
-    LogPrintf("PIVX version %s (%s)\n", version_string, CLIENT_DATE);
+    LogPrintf("Posante version %s (%s)\n", version_string, CLIENT_DATE);
 }
 
 bool AppInitParameterInteraction()
@@ -1027,7 +1028,7 @@ bool AppInitParameterInteraction()
     nMaxConnections = std::max(nUserMaxConnections, 0);
 
     // Trim requested connection counts, to fit into system limitations
-    nMaxConnections = std::max(std::min(nMaxConnections, (int) (FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS)), 0);
+    nMaxConnections = std::max(std::min(nMaxConnections, (int)(FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS)), 0);
     nFD = RaiseFileDescriptorLimit(nMaxConnections + MIN_CORE_FILEDESCRIPTORS);
     if (nFD < MIN_CORE_FILEDESCRIPTORS)
         return UIError(_("Not enough file descriptors available."));
@@ -1040,7 +1041,7 @@ bool AppInitParameterInteraction()
     const std::vector<std::string>& categories = gArgs.GetArgs("-debug");
 
     if (!(gArgs.GetBoolArg("-nodebug", false) ||
-          find(categories.begin(), categories.end(), std::string("0")) != categories.end())) {
+            find(categories.begin(), categories.end(), std::string("0")) != categories.end())) {
         for (const auto& cat : categories) {
             if (!g_logger->EnableCategory(cat)) {
                 UIWarning(strprintf(_("Unsupported logging category %s=%s."), "-debug", cat));
@@ -1061,22 +1062,22 @@ bool AppInitParameterInteraction()
     // Check for -socks - as this is a privacy risk to continue, exit here
     if (gArgs.IsArgSet("-socks"))
         return UIError(
-                _("Error: Unsupported argument -socks found. Setting SOCKS version isn't possible anymore, only SOCKS5 proxies are supported."));
+            _("Error: Unsupported argument -socks found. Setting SOCKS version isn't possible anymore, only SOCKS5 proxies are supported."));
     // Check for -tor - as this is a privacy risk to continue, exit here
     if (gArgs.GetBoolArg("-tor", false))
         return UIError(_("Error: Unsupported argument -tor found, use -onion."));
-    // Check level must be 4 for zerocoin checks
+    // Check level must be 4
     if (gArgs.IsArgSet("-checklevel"))
         return UIError(_("Error: Unsupported argument -checklevel found. Checklevel must be level 4."));
-    // Exit early if -masternode=1 and -listen=0
-    if (gArgs.GetBoolArg("-masternode", DEFAULT_MASTERNODE) && !gArgs.GetBoolArg("-listen", DEFAULT_LISTEN))
-        return UIError(_("Error: -listen must be true if -masternode is set."));
+    // Exit early if -communitynode=1 and -listen=0
+    if (gArgs.GetBoolArg("-communitynode", DEFAULT_MASTERNODE) && !gArgs.GetBoolArg("-listen", DEFAULT_LISTEN))
+        return UIError(_("Error: -listen must be true if -communitynode is set."));
     if (gArgs.GetBoolArg("-benchmark", false))
         UIWarning(_("Warning: Unsupported argument -benchmark ignored, use -debug=bench."));
 
     // Checkmempool and checkblockindex default to true in regtest mode
     int ratio = std::min<int>(
-            std::max<int>(gArgs.GetArg("-checkmempool", Params().DefaultConsistencyChecks() ? 1 : 0), 0), 1000000);
+        std::max<int>(gArgs.GetArg("-checkmempool", Params().DefaultConsistencyChecks() ? 1 : 0), 0), 1000000);
     if (ratio != 0) {
         mempool.setSanityCheck(1.0 / ratio);
     }
@@ -1088,7 +1089,7 @@ bool AppInitParameterInteraction()
     int64_t nMempoolDescendantSizeLimit = gArgs.GetArg("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000;
     if (nMempoolSizeLimit < 0 || nMempoolSizeLimit < nMempoolDescendantSizeLimit * 40)
         return UIError(strprintf(_("Error: -maxmempool must be at least %d MB"),
-                                 gArgs.GetArg("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) / 25));
+            gArgs.GetArg("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) / 25));
 
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = gArgs.GetArg("-par", DEFAULT_SCRIPTCHECK_THREADS);
@@ -1163,7 +1164,7 @@ static bool LockDataDirectory(bool probeOnly)
 {
     std::string strDataDir = GetDataDir().string();
 
-    // Make sure only a single PIVX process is using the data directory.
+    // Make sure only a single Posante process is using the data directory.
     fs::path pathLockFile = GetDataDir() / ".lock";
     FILE* file = fsbridge::fopen(pathLockFile, "a"); // empty lock file; created if it doesn't exist.
     if (file) fclose(file);
@@ -1173,15 +1174,15 @@ static bool LockDataDirectory(bool probeOnly)
         // Wait maximum 10 seconds if an old wallet is still running. Avoids lockup during restart
         if (!lock.timed_lock(boost::get_system_time() + boost::posix_time::seconds(10))) {
             return UIError(strprintf(_("Cannot obtain a lock on data directory %s. %s is probably already running."),
-                                     strDataDir, _(PACKAGE_NAME)));
+                strDataDir, _(PACKAGE_NAME)));
         }
         if (probeOnly) {
             lock.unlock();
         }
     } catch (const boost::interprocess::interprocess_exception& e) {
         return UIError(
-                strprintf(_("Cannot obtain a lock on data directory %s. %s is probably already running.") + " %s.",
-                          strDataDir, _(PACKAGE_NAME), e.what()));
+            strprintf(_("Cannot obtain a lock on data directory %s. %s is probably already running.") + " %s.",
+                strDataDir, _(PACKAGE_NAME), e.what()));
     }
     return true;
 }
@@ -1346,29 +1347,23 @@ bool AppInitMain()
             fs::path blocksDir = GetDataDir() / "blocks";
             fs::path chainstateDir = GetDataDir() / "chainstate";
             fs::path sporksDir = GetDataDir() / "sporks";
-            fs::path zerocoinDir = GetDataDir() / "zerocoin";
 
-            LogPrintf("Deleting blockchain folders blocks, chainstate, sporks and zerocoin\n");
+            LogPrintf("Deleting blockchain folders blocks, chainstate and sporks \n");
             // We delete in 4 individual steps in case one of the folder is missing already
             try {
-                if (fs::exists(blocksDir)){
+                if (fs::exists(blocksDir)) {
                     fs::remove_all(blocksDir);
                     LogPrintf("-resync: folder deleted: %s\n", blocksDir.string().c_str());
                 }
 
-                if (fs::exists(chainstateDir)){
+                if (fs::exists(chainstateDir)) {
                     fs::remove_all(chainstateDir);
                     LogPrintf("-resync: folder deleted: %s\n", chainstateDir.string().c_str());
                 }
 
-                if (fs::exists(sporksDir)){
+                if (fs::exists(sporksDir)) {
                     fs::remove_all(sporksDir);
                     LogPrintf("-resync: folder deleted: %s\n", sporksDir.string().c_str());
-                }
-
-                if (fs::exists(zerocoinDir)){
-                    fs::remove_all(zerocoinDir);
-                    LogPrintf("-resync: folder deleted: %s\n", zerocoinDir.string().c_str());
                 }
             } catch (const fs::filesystem_error& error) {
                 LogPrintf("Failed to delete blockchain folders %s\n", error.what());
@@ -1463,7 +1458,7 @@ bool AppInitMain()
     // An empty string is used to not override the onion proxy (in which case it defaults to -proxy set above, or none)
     std::string onionArg = gArgs.GetArg("-onion", "");
     if (!onionArg.empty()) {
-        if (onionArg == "0") { // Handle -noonion/-onion=0
+        if (onionArg == "0") {   // Handle -noonion/-onion=0
             SetLimited(NET_TOR); // set onions as unreachable
         } else {
             CService onionProxy;
@@ -1569,11 +1564,9 @@ bool AppInitMain()
                 delete pcoinsdbview;
                 delete pcoinscatcher;
                 delete pblocktree;
-                delete zerocoinDB;
                 delete pSporkDB;
 
-                //PIVX specific: zerocoin and spork DB's
-                zerocoinDB = new CZerocoinDB(0, false, fReindex);
+                //Posante specific: spork DB's
                 pSporkDB = new CSporkDB(0, false, false);
 
                 pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
@@ -1585,7 +1578,7 @@ bool AppInitMain()
                 // End loop if shutdown was requested
                 if (ShutdownRequested()) break;
 
-                // PIVX: load previous sessions sporks if we have them.
+                // Posante: load previous sessions sporks if we have them.
                 uiInterface.InitMessage(_("Loading sporks..."));
                 sporkManager.LoadSporksFromDB();
 
@@ -1655,30 +1648,6 @@ bool AppInitMain()
                     assert(chainActive.Tip() != NULL);
                 }
 
-                if (Params().NetworkIDString() == CBaseChainParams::MAIN) {
-                    // Prune zerocoin invalid outs if they were improperly stored in the coins database
-                    LOCK(cs_main);
-                    int chainHeight = chainActive.Height();
-                    bool fZerocoinActive = chainHeight > 0 && consensus.NetworkUpgradeActive(chainHeight, Consensus::UPGRADE_ZC);
-
-                    uiInterface.InitMessage(_("Loading/Pruning invalid outputs..."));
-                    if (fZerocoinActive) {
-                        if (!pcoinsTip->PruneInvalidEntries()) {
-                            strLoadError = _("System error while flushing the chainstate after pruning invalid entries. Possible corrupt database.");
-                            break;
-                        }
-                        MoneySupply.Update(pcoinsTip->GetTotalAmount(), chainHeight);
-                        // No need to keep the invalid outs in memory. Clear the map 100 blocks after the last invalid UTXO
-                        if (chainHeight > consensus.height_last_invalid_UTXO + 100) {
-                            invalid_out::setInvalidOutPoints.clear();
-                        }
-                    } else {
-                        // Populate list of invalid/fraudulent outpoints that are banned from the chain
-                        // They will not be added to coins view
-                        invalid_out::LoadOutpoints();
-                    }
-                }
-
                 // !TODO: after enabling reindex-chainstate
                 // if (!fReindex && !fReindexChainState) {
                 if (!fReindex) {
@@ -1689,7 +1658,7 @@ bool AppInitMain()
 
                     {
                         LOCK(cs_main);
-                        CBlockIndex *tip = chainActive.Tip();
+                        CBlockIndex* tip = chainActive.Tip();
                         RPCNotifyBlockChange(true, tip);
                         if (tip && tip->nTime > GetAdjustedTime() + 2 * 60 * 60) {
                             strLoadError = _("The block database contains a block which appears to be from the future. "
@@ -1699,7 +1668,6 @@ bool AppInitMain()
                         }
                     }
 
-                    // Zerocoin must check at level 4
                     if (!CVerifyDB().VerifyDB(pcoinsdbview, 4, gArgs.GetArg("-checkblocks", DEFAULT_CHECKBLOCKS))) {
                         strLoadError = _("Corrupted block database detected");
                         fVerifyingBlocks = false;
@@ -1788,7 +1756,8 @@ bool AppInitMain()
         if (g_best_block.IsNull() && chainActive.Tip()) {
             CBlockIndex* tip = chainActive.Tip();
             g_best_block = tip->GetBlockHash();
-            g_best_block_time = tip->GetBlockTime();;
+            g_best_block_time = tip->GetBlockTime();
+            ;
             g_best_block_cv.notify_all();
         }
     }
@@ -1810,20 +1779,20 @@ bool AppInitMain()
     }
 
     uiInterface.InitMessage(_("Calculating money supply..."));
-    int nChainHeight = WITH_LOCK(cs_main, return chainActive.Height(); );
+    int nChainHeight = WITH_LOCK(cs_main, return chainActive.Height(););
     MoneySupply.Update(pcoinsTip->GetTotalAmount(), nChainHeight);
 
 
     // ********************************************************* Step 10: setup layer 2 data
 
-    uiInterface.InitMessage(_("Loading masternode cache..."));
+    uiInterface.InitMessage(_("Loading communitynode cache..."));
 
     mnodeman.SetBestHeight(nChainHeight);
     LoadBlockHashesCache(mnodeman);
     CMasternodeDB mndb;
     CMasternodeDB::ReadResult readResult = mndb.Read(mnodeman);
     if (readResult == CMasternodeDB::FileError)
-        LogPrintf("Missing masternode cache file - mncache.dat, will try to recreate\n");
+        LogPrintf("Missing communitynode cache file - mncache.dat, will try to recreate\n");
     else if (readResult != CMasternodeDB::Ok) {
         LogPrintf("Error reading mncache.dat - cached data discarded\n");
     }
@@ -1845,28 +1814,30 @@ bool AppInitMain()
     g_budgetman.ResetSync();
     g_budgetman.ClearSeen();
 
-    uiInterface.InitMessage(_("Loading masternode payment cache..."));
+    uiInterface.InitMessage(_("Loading communitynode payment cache..."));
 
     CMasternodePaymentDB mnpayments;
     CMasternodePaymentDB::ReadResult readResult3 = mnpayments.Read(masternodePayments);
 
     if (readResult3 == CMasternodePaymentDB::FileError)
-        LogPrintf("Missing masternode payment cache - mnpayments.dat, will try to recreate\n");
+        LogPrintf("Missing communitynode payment cache - mnpayments.dat, will try to recreate\n");
     else if (readResult3 != CMasternodePaymentDB::Ok) {
         LogPrintf("Error reading mnpayments.dat - cached data discarded\n");
     }
 
-    fMasterNode = gArgs.GetBoolArg("-masternode", DEFAULT_MASTERNODE);
+    fMasterNode = gArgs.GetBoolArg("-communitynode", DEFAULT_MASTERNODE);
 
     if ((fMasterNode || masternodeConfig.getCount() > -1) && fTxIndex == false) {
-        return UIError("Enabling Masternode support requires turning on transaction indexing."
-                         "Please add txindex=1 to your configuration and start with -reindex");
+        return UIError("Enabling Communitynode support requires turning on transaction indexing."
+                       "Please add txindex=1 to your configuration and start with -reindex");
     }
 
     if (fMasterNode) {
-        LogPrintf("IS MASTER NODE\n");
-        auto res = initMasternode(gArgs.GetArg("-masternodeprivkey", ""), gArgs.GetArg("-masternodeaddr", ""), true);
-        if (!res) { return UIError(res.getError()); }
+        LogPrintf("IS COMMUNITY NODE\n");
+        auto res = initMasternode(gArgs.GetArg("-communitynodeprivkey", ""), gArgs.GetArg("-communitynodeaddr", ""), true);
+        if (!res) {
+            return UIError(res.getError());
+        }
     }
 
     //get the mode of budget voting for this masternode
@@ -1875,14 +1846,14 @@ bool AppInitMain()
 #ifdef ENABLE_WALLET
     if (gArgs.GetBoolArg("-mnconflock", DEFAULT_MNCONFLOCK) && pwalletMain) {
         LOCK(pwalletMain->cs_wallet);
-        LogPrintf("Locking Masternodes collateral utxo:\n");
+        LogPrintf("Locking Communitynodes collateral utxo:\n");
         uint256 mnTxHash;
         for (const auto& mne : masternodeConfig.getEntries()) {
             mnTxHash.SetHex(mne.getTxHash());
-            COutPoint outpoint = COutPoint(mnTxHash, (unsigned int) std::stoul(mne.getOutputIndex()));
+            COutPoint outpoint = COutPoint(mnTxHash, (unsigned int)std::stoul(mne.getOutputIndex()));
             pwalletMain->LockCoin(outpoint);
             LogPrintf("Locked collateral, MN: %s, tx hash: %s, output index: %s\n",
-                      mne.getAlias(), mne.getTxHash(), mne.getOutputIndex());
+                mne.getAlias(), mne.getTxHash(), mne.getOutputIndex());
         }
     }
 #endif
@@ -1890,7 +1861,7 @@ bool AppInitMain()
     // lite mode disables all Masternode related functionality
     fLiteMode = gArgs.GetBoolArg("-litemode", false);
     if (fMasterNode && fLiteMode) {
-        return UIError("You can not start a masternode in litemode");
+        return UIError("You can not start a communitynode in litemode");
     }
 
     LogPrintf("fLiteMode %d\n", fLiteMode);
@@ -1941,8 +1912,8 @@ bool AppInitMain()
     connOptions.nMaxFeeler = 1;
     connOptions.nBestHeight = chainActive.Height();
     connOptions.uiInterface = &uiInterface;
-    connOptions.nSendBufferMaxSize = 1000*gArgs.GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
-    connOptions.nReceiveFloodSize = 1000*gArgs.GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
+    connOptions.nSendBufferMaxSize = 1000 * gArgs.GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
+    connOptions.nReceiveFloodSize = 1000 * gArgs.GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
 
     if (!connman.Start(scheduler, strNodeError, connOptions))
         return UIError(strNodeError);
@@ -1953,7 +1924,7 @@ bool AppInitMain()
         GenerateBitcoins(gArgs.GetBoolArg("-gen", DEFAULT_GENERATE), pwalletMain, gArgs.GetArg("-genproclimit", DEFAULT_GENERATE_PROCLIMIT));
 #endif
 
-    // ********************************************************* Step 12: finished
+        // ********************************************************* Step 12: finished
 
 #ifdef ENABLE_WALLET
     if (pwalletMain) {

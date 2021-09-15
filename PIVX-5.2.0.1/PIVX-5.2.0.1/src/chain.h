@@ -4,6 +4,7 @@
 // Copyright (c) 2013-2014 The NovaCoin Developers
 // Copyright (c) 2014-2018 The BlackCoin Developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -18,7 +19,6 @@
 #include "tinyformat.h"
 #include "uint256.h"
 #include "util.h"
-#include "libzerocoin/Denominations.h"
 
 #include <vector>
 
@@ -234,7 +234,6 @@ public:
     unsigned int nTime{0};
     unsigned int nBits{0};
     unsigned int nNonce{0};
-    uint256 nAccumulatorCheckpoint{};
 
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId{0};
@@ -290,8 +289,8 @@ const CBlockIndex* LastCommonAncestor(const CBlockIndex* pa, const CBlockIndex* 
 /** Used to marshal pointers into hashes for db storage. */
 
 // New serialization introduced with 4.0.99
-static const int DBI_OLD_SER_VERSION = 4009900;
-static const int DBI_SER_VERSION_NO_ZC = 4009902;   // removes mapZerocoinSupply, nMoneySupply
+static const int DBI_OLD_SER_VERSION = 990000;
+static const int DBI_SER_VERSION_NO_ZC = 1000000;  
 
 class CDiskBlockIndex : public CBlockIndex
 {
@@ -337,8 +336,6 @@ public:
             READWRITE(nTime);
             READWRITE(nBits);
             READWRITE(nNonce);
-            if(this->nVersion > 3 && this->nVersion < 7)
-                READWRITE(nAccumulatorCheckpoint);
 
             // Sapling blocks
             if (this->nVersion >= 8) {
@@ -347,8 +344,6 @@ public:
             }
 
         } else if (nSerVersion > DBI_OLD_SER_VERSION && ser_action.ForRead()) {
-            // Serialization with CLIENT_VERSION = 4009901
-            std::map<libzerocoin::CoinDenomination, int64_t> mapZerocoinSupply;
             int64_t nMoneySupply = 0;
             READWRITE(nMoneySupply);
             READWRITE(nFlags);
@@ -359,10 +354,6 @@ public:
             READWRITE(nTime);
             READWRITE(nBits);
             READWRITE(nNonce);
-            if(this->nVersion > 3) {
-                READWRITE(mapZerocoinSupply);
-                if(this->nVersion < 7) READWRITE(nAccumulatorCheckpoint);
-            }
 
         } else if (ser_action.ForRead()) {
             // Serialization with CLIENT_VERSION = 4009900-
@@ -394,13 +385,6 @@ public:
             READWRITE(nTime);
             READWRITE(nBits);
             READWRITE(nNonce);
-            if(this->nVersion > 3) {
-                std::map<libzerocoin::CoinDenomination, int64_t> mapZerocoinSupply;
-                std::vector<libzerocoin::CoinDenomination> vMintDenominationsInBlock;
-                READWRITE(nAccumulatorCheckpoint);
-                READWRITE(mapZerocoinSupply);
-                READWRITE(vMintDenominationsInBlock);
-            }
         }
     }
 
@@ -414,8 +398,6 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
-        if (nVersion > 3 && nVersion < 7)
-            block.nAccumulatorCheckpoint = nAccumulatorCheckpoint;
         if (nVersion >= 8)
             block.hashFinalSaplingRoot = hashFinalSaplingRoot;
         return block.GetHash();
@@ -436,7 +418,6 @@ public:
 class CLegacyBlockIndex : public CBlockIndex
 {
 public:
-    std::map<libzerocoin::CoinDenomination, int64_t> mapZerocoinSupply{};
     int64_t nMint = 0;
     uint256 hashNext{};
     uint256 hashPrev{};
@@ -444,7 +425,6 @@ public:
     uint256 nStakeModifierV2{};
     COutPoint prevoutStake{};
     unsigned int nStakeTime = 0;
-    std::vector<libzerocoin::CoinDenomination> vMintDenominationsInBlock;
     int64_t nMoneySupply = 0;
 
 
@@ -488,10 +468,6 @@ public:
             READWRITE(nTime);
             READWRITE(nBits);
             READWRITE(nNonce);
-            if(this->nVersion > 3) {
-                READWRITE(mapZerocoinSupply);
-                if(this->nVersion < 7) READWRITE(nAccumulatorCheckpoint);
-            }
 
         } else {
             // Serialization with CLIENT_VERSION = 4009900-
@@ -514,11 +490,6 @@ public:
             READWRITE(nTime);
             READWRITE(nBits);
             READWRITE(nNonce);
-            if(this->nVersion > 3) {
-                READWRITE(nAccumulatorCheckpoint);
-                READWRITE(mapZerocoinSupply);
-                READWRITE(vMintDenominationsInBlock);
-            }
         }
     }
 };

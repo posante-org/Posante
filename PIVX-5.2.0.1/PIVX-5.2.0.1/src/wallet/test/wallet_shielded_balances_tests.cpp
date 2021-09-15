@@ -1,4 +1,5 @@
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -43,11 +44,10 @@ CWalletTx& SetWalletNotesData(CWallet* wallet, CWalletTx& wtx)
  * Creates and send a tx with an input of 'inputAmount' to 'vDest'.
  */
 CWalletTx& AddShieldedBalanceToWallet(CAmount inputAmount,
-                                      const std::vector<ShieldedDestination>& vDest,
-                                      CWallet* wallet,
-                                      const Consensus::Params& consensusParams)
+    const std::vector<ShieldedDestination>& vDest,
+    CWallet* wallet,
+    const Consensus::Params& consensusParams)
 {
-
     // Dummy wallet, used to generate the dummy transparent input key and sign it in the transaction builder
     CWallet dummyWallet;
     dummyWallet.SetMinVersion(FEATURE_SAPLING);
@@ -65,9 +65,7 @@ CWalletTx& AddShieldedBalanceToWallet(CAmount inputAmount,
     return wtxUpdated;
 }
 
-CWalletTx& AddShieldedBalanceToWallet(const libzcash::SaplingPaymentAddress& sendTo, CAmount amount,
-                                      CWallet& wallet, const Consensus::Params& consensusParams,
-                                      libzcash::SaplingExtendedSpendingKey& extskOut)
+CWalletTx& AddShieldedBalanceToWallet(const libzcash::SaplingPaymentAddress& sendTo, CAmount amount, CWallet& wallet, const Consensus::Params& consensusParams, libzcash::SaplingExtendedSpendingKey& extskOut)
 {
     // Create a transaction shielding balance to 'sendTo' and load it to the wallet.
     BOOST_CHECK(wallet.GetSaplingExtendedSpendingKey(sendTo, extskOut));
@@ -93,10 +91,10 @@ SaplingSpendValues UpdateWalletInternalNotesData(CWalletTx& wtx, const SaplingOu
     assert(nd.IsMyNote());
     const auto& ivk = *(nd.ivk);
     auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(
-            wtx.tx->sapData->vShieldedOutput[sapPoint.n].encCiphertext,
-            ivk,
-            wtx.tx->sapData->vShieldedOutput[sapPoint.n].ephemeralKey,
-            wtx.tx->sapData->vShieldedOutput[sapPoint.n].cmu);
+        wtx.tx->sapData->vShieldedOutput[sapPoint.n].encCiphertext,
+        ivk,
+        wtx.tx->sapData->vShieldedOutput[sapPoint.n].ephemeralKey,
+        wtx.tx->sapData->vShieldedOutput[sapPoint.n].cmu);
     assert(static_cast<bool>(maybe_pt));
     boost::optional<libzcash::SaplingNotePlaintext> notePlainText = maybe_pt.get();
     libzcash::SaplingNote note = notePlainText->note(ivk).get();
@@ -129,7 +127,6 @@ SaplingSpendValues UpdateWalletInternalNotesData(CWalletTx& wtx, const SaplingOu
  */
 BOOST_AUTO_TEST_CASE(GetShieldedSimpleCachedCreditAndDebit)
 {
-
     ///////////////////////
     //////// Credit ////////
     ///////////////////////
@@ -137,7 +134,7 @@ BOOST_AUTO_TEST_CASE(GetShieldedSimpleCachedCreditAndDebit)
     auto consensusParams = RegtestActivateSapling();
 
     // Main wallet
-    CWallet &wallet = *pwalletMain;
+    CWallet& wallet = *pwalletMain;
     LOCK2(cs_main, wallet.cs_wallet);
     setupWallet(wallet);
 
@@ -154,7 +151,7 @@ BOOST_AUTO_TEST_CASE(GetShieldedSimpleCachedCreditAndDebit)
     ///////////////////////
 
     // Update transaction and wallet internal state to be able to spend it.
-    SaplingOutPoint sapPoint {wtxUpdated.GetHash(), 0};
+    SaplingOutPoint sapPoint{wtxUpdated.GetHash(), 0};
     SaplingSpendValues sapSpendValues = UpdateWalletInternalNotesData(wtxUpdated, sapPoint, wallet);
 
     // Debit value
@@ -165,14 +162,14 @@ BOOST_AUTO_TEST_CASE(GetShieldedSimpleCachedCreditAndDebit)
     auto builder = TransactionBuilder(consensusParams, 1, &wallet);
     builder.SetFee(fee);
     builder.AddSaplingSpend(
-            extskOut.expsk,
-            sapSpendValues.note,
-            sapSpendValues.anchor,
-            sapSpendValues.witness);
+        extskOut.expsk,
+        sapSpendValues.note,
+        sapSpendValues.anchor,
+        sapSpendValues.witness);
 
     // Send to transparent address
     builder.AddTransparentOutput(CreateDummyDestinationScript(),
-                                 firstDebit);
+        firstDebit);
 
     CTransaction tx = builder.Build().GetTxOrThrow();
     // add tx to wallet and update it.
@@ -190,7 +187,7 @@ BOOST_AUTO_TEST_CASE(GetShieldedSimpleCachedCreditAndDebit)
 
     // Checks that the only shielded output of this tx is change.
     BOOST_CHECK(wallet.GetSaplingScriptPubKeyMan()->IsNoteSaplingChange(
-            SaplingOutPoint(wtxDebitUpdated.GetHash(), 0), pa));
+        SaplingOutPoint(wtxDebitUpdated.GetHash(), 0), pa));
 
     // Revert to default
     RegtestDeactivateSapling();
@@ -203,26 +200,23 @@ libzcash::SaplingPaymentAddress getNewDummyShieldedAddress()
     return m.DefaultAddress();
 }
 
-CWalletTx& buildTxAndLoadToWallet(CWallet& wallet, const libzcash::SaplingExtendedSpendingKey& extskOut,
-                                  const SaplingSpendValues& sapSpendValues, libzcash::SaplingPaymentAddress dest,
-                                  const CAmount& destAmount, const Consensus::Params& consensus)
+CWalletTx& buildTxAndLoadToWallet(CWallet& wallet, const libzcash::SaplingExtendedSpendingKey& extskOut, const SaplingSpendValues& sapSpendValues, libzcash::SaplingPaymentAddress dest, const CAmount& destAmount, const Consensus::Params& consensus)
 {
     // Create the spending transaction
     auto builder = TransactionBuilder(consensus, 1, &wallet);
     builder.SetFee(fee);
     builder.AddSaplingSpend(
-            extskOut.expsk,
-            sapSpendValues.note,
-            sapSpendValues.anchor,
-            sapSpendValues.witness);
+        extskOut.expsk,
+        sapSpendValues.note,
+        sapSpendValues.anchor,
+        sapSpendValues.witness);
 
     // Send to shielded address
     builder.AddSaplingOutput(
-            extskOut.expsk.ovk,
-            dest,
-            destAmount,
-            {}
-    );
+        extskOut.expsk.ovk,
+        dest,
+        destAmount,
+        {});
 
     CTransaction tx = builder.Build().GetTxOrThrow();
     // add tx to wallet and update it.
@@ -240,7 +234,7 @@ BOOST_AUTO_TEST_CASE(VerifyShieldedToRemoteShieldedCachedBalance)
     auto consensusParams = RegtestActivateSapling();
 
     // Main wallet
-    CWallet &wallet = *pwalletMain;
+    CWallet& wallet = *pwalletMain;
     LOCK2(cs_main, wallet.cs_wallet);
     setupWallet(wallet);
 
@@ -253,7 +247,7 @@ BOOST_AUTO_TEST_CASE(VerifyShieldedToRemoteShieldedCachedBalance)
     CWalletTx& wtxUpdated = AddShieldedBalanceToWallet(pa, firstCredit, wallet, consensusParams, extskOut);
 
     // Update transaction and wallet internal state to be able to spend it.
-    SaplingOutPoint sapPoint {wtxUpdated.GetHash(), 0};
+    SaplingOutPoint sapPoint{wtxUpdated.GetHash(), 0};
     SaplingSpendValues sapSpendValues = UpdateWalletInternalNotesData(wtxUpdated, sapPoint, wallet);
 
     // Remote destination values
@@ -262,11 +256,11 @@ BOOST_AUTO_TEST_CASE(VerifyShieldedToRemoteShieldedCachedBalance)
 
     // Create the spending transaction and load it to the wallet
     CWalletTx& wtxDebitUpdated = buildTxAndLoadToWallet(wallet,
-                           extskOut,
-                           sapSpendValues,
-                           destShieldedAddress,
-                           destAmount,
-                           consensusParams);
+        extskOut,
+        sapSpendValues,
+        destShieldedAddress,
+        destAmount,
+        consensusParams);
 
     // Validate results
     CAmount expectedShieldedChange = firstCredit - destAmount - fee;
@@ -285,8 +279,7 @@ BOOST_AUTO_TEST_CASE(VerifyShieldedToRemoteShieldedCachedBalance)
     RegtestDeactivateSapling();
 }
 
-struct FakeBlock
-{
+struct FakeBlock {
     CBlock block;
     CBlockIndex* pindex;
 };
@@ -323,11 +316,11 @@ BOOST_AUTO_TEST_CASE(GetShieldedAvailableCredit)
     auto consensusParams = RegtestActivateSapling();
 
     // Main wallet
-    CWallet &wallet = *pwalletMain;
+    CWallet& wallet = *pwalletMain;
     LOCK2(cs_main, wallet.cs_wallet);
     setupWallet(wallet);
 
-    // 1) generate a shielded address and send 20 PIV in two shielded outputs
+    // 1) generate a shielded address and send 20 POSA in two shielded outputs
     libzcash::SaplingPaymentAddress pa = wallet.GenerateNewSaplingZKey();
     CAmount credit = COIN * 20;
 
@@ -358,12 +351,12 @@ BOOST_AUTO_TEST_CASE(GetShieldedAvailableCredit)
     std::vector<SaplingNoteEntry> saplingEntries;
     Optional<libzcash::SaplingPaymentAddress> opPa(pa);
     wallet.GetSaplingScriptPubKeyMan()->GetFilteredNotes(saplingEntries,
-                                                         opPa,
-                                                         0);
+        opPa,
+        0);
 
     std::vector<SaplingOutPoint> ops = {saplingEntries[0].op};
     uint256 anchor;
-    std::vector<boost::optional<SaplingWitness>> witnesses;
+    std::vector<boost::optional<SaplingWitness> > witnesses;
     pwalletMain->GetSaplingScriptPubKeyMan()->GetSaplingNoteWitnesses(ops, witnesses, anchor);
     SaplingSpendValues sapSpendValues{saplingEntries[0].note, anchor, *witnesses[0]};
 
@@ -374,11 +367,11 @@ BOOST_AUTO_TEST_CASE(GetShieldedAvailableCredit)
 
     // Create the spending transaction and load it to the wallet
     CWalletTx& wtxDebitUpdated = buildTxAndLoadToWallet(wallet,
-                                                        extskOut,
-                                                        sapSpendValues,
-                                                        destShieldedAddress,
-                                                        destAmount,
-                                                        consensusParams);
+        extskOut,
+        sapSpendValues,
+        destShieldedAddress,
+        destAmount,
+        consensusParams);
 
     // Check previous credit tx balance being the same and then force a recalculation
     BOOST_CHECK_EQUAL(wtxUpdated.GetShieldedAvailableCredit(), credit);

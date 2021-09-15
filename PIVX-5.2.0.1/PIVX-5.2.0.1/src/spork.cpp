@@ -1,5 +1,6 @@
 // Copyright (c) 2014-2016 The Dash developers
 // Copyright (c) 2016-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,8 +8,8 @@
 
 #include "messagesigner.h"
 #include "net.h"
-#include "netmessagemaker.h"
 #include "net_processing.h"
+#include "netmessagemaker.h"
 #include "sporkdb.h"
 #include "validation.h"
 
@@ -17,16 +18,14 @@
 #define MAKE_SPORK_DEF(name, defaultValue) CSporkDef(name, defaultValue, #name)
 
 std::vector<CSporkDef> sporkDefs = {
-    MAKE_SPORK_DEF(SPORK_5_MAX_VALUE,                       1000),          // 1000 PIV
-    MAKE_SPORK_DEF(SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT,  4070908800ULL), // OFF
-    MAKE_SPORK_DEF(SPORK_9_MASTERNODE_BUDGET_ENFORCEMENT,   4070908800ULL), // OFF
-    MAKE_SPORK_DEF(SPORK_13_ENABLE_SUPERBLOCKS,             4070908800ULL), // OFF
-    MAKE_SPORK_DEF(SPORK_14_NEW_PROTOCOL_ENFORCEMENT,       4070908800ULL), // OFF
-    MAKE_SPORK_DEF(SPORK_15_NEW_PROTOCOL_ENFORCEMENT_2,     4070908800ULL), // OFF
-    MAKE_SPORK_DEF(SPORK_16_ZEROCOIN_MAINTENANCE_MODE,      4070908800ULL), // OFF
-    MAKE_SPORK_DEF(SPORK_18_ZEROCOIN_PUBLICSPEND_V4,        4070908800ULL), // OFF
-    MAKE_SPORK_DEF(SPORK_19_COLDSTAKING_MAINTENANCE,        4070908800ULL), // OFF
-    MAKE_SPORK_DEF(SPORK_20_SAPLING_MAINTENANCE,            4070908800ULL), // OFF
+    MAKE_SPORK_DEF(SPORK_5_MAX_VALUE, 1000),                               // 1000 POSA
+    MAKE_SPORK_DEF(SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT, 4070908800ULL), // OFF
+    MAKE_SPORK_DEF(SPORK_9_MASTERNODE_BUDGET_ENFORCEMENT, 4070908800ULL),  // OFF
+    MAKE_SPORK_DEF(SPORK_13_ENABLE_SUPERBLOCKS, 4070908800ULL),            // OFF
+    MAKE_SPORK_DEF(SPORK_14_NEW_PROTOCOL_ENFORCEMENT, 4070908800ULL),      // OFF
+    MAKE_SPORK_DEF(SPORK_15_NEW_PROTOCOL_ENFORCEMENT_2, 4070908800ULL),    // OFF
+    MAKE_SPORK_DEF(SPORK_19_COLDSTAKING_MAINTENANCE, 4070908800ULL),       // OFF
+    MAKE_SPORK_DEF(SPORK_20_SAPLING_MAINTENANCE, 4070908800ULL),           // OFF
 };
 
 CSporkManager sporkManager;
@@ -46,7 +45,7 @@ void CSporkManager::Clear()
     mapSporksActive.clear();
 }
 
-// PIVX: on startup load spork values from previous session if they exist in the sporkDB
+// Posante: on startup load spork values from previous session if they exist in the sporkDB
 void CSporkManager::LoadSporksFromDB()
 {
     for (const auto& sporkDef : sporkDefs) {
@@ -65,7 +64,7 @@ void CSporkManager::LoadSporksFromDB()
             // the value is stale and should ignore it to prevent un-necessary disconnections in the
             // version handshake process. This value is also suitable for testnet as the timestamp
             // for this spork on that network was signed shortly after this.
-            if (spork.nTimeSigned <= 1578338986 ) {
+            if (spork.nTimeSigned <= 1578338986) {
                 LogPrintf("%s : Stale spork 15 detected, clearing...\n", __func__);
                 CSporkManager::Clear();
                 return;
@@ -81,10 +80,10 @@ void CSporkManager::LoadSporksFromDB()
         if (spork.nValue > 1000000) {
             char* res = std::ctime(&result);
             LogPrintf("%s : loaded spork %s with value %d : %s\n", __func__, sporkName.c_str(), spork.nValue,
-                      ((res) ? res : "no time") );
+                ((res) ? res : "no time"));
         } else {
             LogPrintf("%s : loaded spork %s with value %d\n", __func__,
-                      sporkName, spork.nValue);
+                sporkName, spork.nValue);
         }
     }
 }
@@ -140,8 +139,8 @@ int CSporkManager::ProcessSporkMsg(CSporkMessage& spork)
             if (mapSporksActive[spork.nSporkID].nTimeSigned >= spork.nTimeSigned) {
                 // spork in memory has been signed more recently
                 LogPrint(BCLog::SPORKS, "%s : spork %d (%s) in memory is more recent: %d >= %d\n", __func__,
-                          spork.nSporkID, sporkName,
-                          mapSporksActive[spork.nSporkID].nTimeSigned, spork.nTimeSigned);
+                    spork.nSporkID, sporkName,
+                    mapSporksActive[spork.nSporkID].nTimeSigned, spork.nTimeSigned);
                 return 0;
             } else {
                 // update active spork
@@ -170,7 +169,7 @@ int CSporkManager::ProcessSporkMsg(CSporkMessage& spork)
 
     // Log valid spork value change
     LogPrintf("%s : got %s spork %d (%s) with value %d (signed at %d)\n", __func__,
-              strStatus, spork.nSporkID, sporkName, spork.nValue, spork.nTimeSigned);
+        strStatus, spork.nSporkID, sporkName, spork.nValue, spork.nTimeSigned);
 
     {
         LOCK(cs);
@@ -179,7 +178,7 @@ int CSporkManager::ProcessSporkMsg(CSporkMessage& spork)
     }
     spork.Relay();
 
-    // PIVX: add to spork database.
+    // Posante: add to spork database.
     pSporkDB->WriteSpork(spork.nSporkID, spork);
     // All good.
     return 0;
@@ -208,7 +207,7 @@ bool CSporkManager::UpdateSpork(SporkId nSporkID, int64_t nValue)
 {
     CSporkMessage spork = CSporkMessage(nSporkID, nValue, GetTime());
 
-    if(spork.Sign(strMasterPrivKey)){
+    if (spork.Sign(strMasterPrivKey)) {
         spork.Relay();
         LOCK(cs);
         mapSporks[spork.GetHash()] = spork;
@@ -309,8 +308,8 @@ uint256 CSporkMessage::GetSignatureHash() const
 std::string CSporkMessage::GetStrMessage() const
 {
     return std::to_string(nSporkID) +
-            std::to_string(nValue) +
-            std::to_string(nTimeSigned);
+           std::to_string(nValue) +
+           std::to_string(nTimeSigned);
 }
 
 const CPubKey CSporkMessage::GetPublicKey() const
@@ -328,4 +327,3 @@ void CSporkMessage::Relay()
     CInv inv(MSG_SPORK, GetHash());
     g_connman->RelayInv(inv);
 }
-

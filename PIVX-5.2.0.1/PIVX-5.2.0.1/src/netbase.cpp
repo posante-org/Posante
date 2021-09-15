@@ -1,19 +1,20 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin developers
 // Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifdef HAVE_CONFIG_H
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
 #include "netbase.h"
 
 #include "hash.h"
+#include "random.h"
 #include "sync.h"
 #include "uint256.h"
-#include "random.h"
 #include "util.h"
 #include "utilstrencodings.h"
 
@@ -199,13 +200,13 @@ struct timeval MillisToTimeval(int64_t nTimeout)
 }
 
 /** SOCKS version */
-enum SOCKSVersion: uint8_t {
+enum SOCKSVersion : uint8_t {
     SOCKS4 = 0x04,
     SOCKS5 = 0x05
 };
 
 /** Values defined for METHOD in RFC1928 */
-enum SOCKS5Method: uint8_t {
+enum SOCKS5Method : uint8_t {
     NOAUTH = 0x00,        //! No authentication required
     GSSAPI = 0x01,        //! GSSAPI
     USER_PASS = 0x02,     //! Username/password
@@ -213,14 +214,14 @@ enum SOCKS5Method: uint8_t {
 };
 
 /** Values defined for CMD in RFC1928 */
-enum SOCKS5Command: uint8_t {
+enum SOCKS5Command : uint8_t {
     CONNECT = 0x01,
     BIND = 0x02,
     UDP_ASSOCIATE = 0x03
 };
 
 /** Values defined for REP in RFC1928 */
-enum SOCKS5Reply: uint8_t {
+enum SOCKS5Reply : uint8_t {
     SUCCEEDED = 0x00,        //! Succeeded
     GENFAILURE = 0x01,       //! General failure
     NOTALLOWED = 0x02,       //! Connection not allowed by ruleset
@@ -233,7 +234,7 @@ enum SOCKS5Reply: uint8_t {
 };
 
 /** Values defined for ATYPE in RFC1928 */
-enum SOCKS5Atyp: uint8_t {
+enum SOCKS5Atyp : uint8_t {
     IPV4 = 0x01,
     DOMAINNAME = 0x03,
     IPV6 = 0x04,
@@ -299,8 +300,7 @@ static IntrRecvError InterruptibleRecv(uint8_t* data, size_t len, int timeout, c
 }
 
 /** Credentials for proxy authentication */
-struct ProxyCredentials
-{
+struct ProxyCredentials {
     std::string username;
     std::string password;
 };
@@ -308,30 +308,30 @@ struct ProxyCredentials
 /** Convert SOCKS5 reply to a an error message */
 static std::string Socks5ErrorString(uint8_t err)
 {
-    switch(err) {
-        case SOCKS5Reply::GENFAILURE:
-            return "general failure";
-        case SOCKS5Reply::NOTALLOWED:
-            return "connection not allowed";
-        case SOCKS5Reply::NETUNREACHABLE:
-            return "network unreachable";
-        case SOCKS5Reply::HOSTUNREACHABLE:
-            return "host unreachable";
-        case SOCKS5Reply::CONNREFUSED:
-            return "connection refused";
-        case SOCKS5Reply::TTLEXPIRED:
-            return "TTL expired";
-        case SOCKS5Reply::CMDUNSUPPORTED:
-            return "protocol error";
-        case SOCKS5Reply::ATYPEUNSUPPORTED:
-            return "address type not supported";
-        default:
-            return "unknown";
+    switch (err) {
+    case SOCKS5Reply::GENFAILURE:
+        return "general failure";
+    case SOCKS5Reply::NOTALLOWED:
+        return "connection not allowed";
+    case SOCKS5Reply::NETUNREACHABLE:
+        return "network unreachable";
+    case SOCKS5Reply::HOSTUNREACHABLE:
+        return "host unreachable";
+    case SOCKS5Reply::CONNREFUSED:
+        return "connection refused";
+    case SOCKS5Reply::TTLEXPIRED:
+        return "TTL expired";
+    case SOCKS5Reply::CMDUNSUPPORTED:
+        return "protocol error";
+    case SOCKS5Reply::ATYPEUNSUPPORTED:
+        return "address type not supported";
+    default:
+        return "unknown";
     }
 }
 
 /** Connect using SOCKS5 (as described in RFC1928) */
-bool static Socks5(std::string strDest, int port, const ProxyCredentials *auth, SOCKET& hSocket)
+bool static Socks5(std::string strDest, int port, const ProxyCredentials* auth, SOCKET& hSocket)
 {
     IntrRecvError recvr;
     LogPrint(BCLog::NET, "SOCKS5 connecting %s\n", strDest);
@@ -397,11 +397,11 @@ bool static Socks5(std::string strDest, int port, const ProxyCredentials *auth, 
         return error("Proxy requested wrong authentication method %02x", pchRet1[1]);
     }
     std::vector<uint8_t> vSocks5;
-    vSocks5.push_back(SOCKSVersion::SOCKS5); // VER protocol version
+    vSocks5.push_back(SOCKSVersion::SOCKS5);   // VER protocol version
     vSocks5.push_back(SOCKS5Command::CONNECT); // CMD CONNECT
-    vSocks5.push_back(0x00); // RSV Reserved must be 0
+    vSocks5.push_back(0x00);                   // RSV Reserved must be 0
     vSocks5.push_back(SOCKS5Atyp::DOMAINNAME); // ATYP DOMAINNAME
-    vSocks5.push_back(strDest.size()); // Length<=255 is checked at beginning of function
+    vSocks5.push_back(strDest.size());         // Length<=255 is checked at beginning of function
     vSocks5.insert(vSocks5.end(), strDest.begin(), strDest.end());
     vSocks5.push_back((port >> 8) & 0xFF);
     vSocks5.push_back((port >> 0) & 0xFF);
@@ -437,22 +437,26 @@ bool static Socks5(std::string strDest, int port, const ProxyCredentials *auth, 
         return error("Error: malformed proxy response");
     }
     uint8_t pchRet3[256];
-    switch (pchRet2[3])
-    {
-        case SOCKS5Atyp::IPV4: recvr = InterruptibleRecv(pchRet3, 4, SOCKS5_RECV_TIMEOUT, hSocket); break;
-        case SOCKS5Atyp::IPV6: recvr = InterruptibleRecv(pchRet3, 16, SOCKS5_RECV_TIMEOUT, hSocket); break;
-        case SOCKS5Atyp::DOMAINNAME:
-        {
-            recvr = InterruptibleRecv(pchRet3, 1, SOCKS5_RECV_TIMEOUT, hSocket);
-            if (recvr != IntrRecvError::OK) {
-                CloseSocket(hSocket);
-                return error("Error reading from proxy");
-            }
-            int nRecv = pchRet3[0];
-            recvr = InterruptibleRecv(pchRet3, nRecv, SOCKS5_RECV_TIMEOUT, hSocket);
-            break;
+    switch (pchRet2[3]) {
+    case SOCKS5Atyp::IPV4:
+        recvr = InterruptibleRecv(pchRet3, 4, SOCKS5_RECV_TIMEOUT, hSocket);
+        break;
+    case SOCKS5Atyp::IPV6:
+        recvr = InterruptibleRecv(pchRet3, 16, SOCKS5_RECV_TIMEOUT, hSocket);
+        break;
+    case SOCKS5Atyp::DOMAINNAME: {
+        recvr = InterruptibleRecv(pchRet3, 1, SOCKS5_RECV_TIMEOUT, hSocket);
+        if (recvr != IntrRecvError::OK) {
+            CloseSocket(hSocket);
+            return error("Error reading from proxy");
         }
-        default: CloseSocket(hSocket); return error("Error: malformed proxy response");
+        int nRecv = pchRet3[0];
+        recvr = InterruptibleRecv(pchRet3, nRecv, SOCKS5_RECV_TIMEOUT, hSocket);
+        break;
+    }
+    default:
+        CloseSocket(hSocket);
+        return error("Error: malformed proxy response");
     }
     if (recvr != IntrRecvError::OK) {
         CloseSocket(hSocket);
@@ -543,7 +547,7 @@ bool static ConnectSocketDirectly(const CService& addrConnect, SOCKET& hSocketRe
     return true;
 }
 
-bool SetProxy(enum Network net, const proxyType &addrProxy)
+bool SetProxy(enum Network net, const proxyType& addrProxy)
 {
     assert(net >= 0 && net < NET_MAX);
     if (!addrProxy.IsValid())
@@ -563,7 +567,7 @@ bool GetProxy(enum Network net, proxyType& proxyInfoOut)
     return true;
 }
 
-bool SetNameProxy(const proxyType &addrProxy)
+bool SetNameProxy(const proxyType& addrProxy)
 {
     if (!addrProxy.IsValid())
         return false;
@@ -572,7 +576,7 @@ bool SetNameProxy(const proxyType &addrProxy)
     return true;
 }
 
-bool GetNameProxy(proxyType &nameProxyOut)
+bool GetNameProxy(proxyType& nameProxyOut)
 {
     LOCK(cs_proxyInfos);
     if (!nameProxy.IsValid())
@@ -597,7 +601,7 @@ bool IsProxy(const CNetAddr& addr)
     return false;
 }
 
-static bool ConnectThroughProxy(const proxyType &proxy, const std::string strDest, int port, SOCKET& hSocketRet, int nTimeout, bool *outProxyConnectionFailed)
+static bool ConnectThroughProxy(const proxyType& proxy, const std::string strDest, int port, SOCKET& hSocketRet, int nTimeout, bool* outProxyConnectionFailed)
 {
     SOCKET hSocket = INVALID_SOCKET;
     // first connect to proxy server
@@ -622,7 +626,7 @@ static bool ConnectThroughProxy(const proxyType &proxy, const std::string strDes
     return true;
 }
 
-bool ConnectSocket(const CService &addrDest, SOCKET& hSocketRet, int nTimeout, bool *outProxyConnectionFailed)
+bool ConnectSocket(const CService& addrDest, SOCKET& hSocketRet, int nTimeout, bool* outProxyConnectionFailed)
 {
     proxyType proxy;
     if (outProxyConnectionFailed)
@@ -669,8 +673,7 @@ bool LookupSubNet(const char* pszName, CSubNet& ret)
     std::vector<CNetAddr> vIP;
 
     std::string strAddress = strSubnet.substr(0, slash);
-    if (LookupHost(strAddress.c_str(), vIP, 1, false))
-    {
+    if (LookupHost(strAddress.c_str(), vIP, 1, false)) {
         CNetAddr network = vIP[0];
         if (slash != strSubnet.npos) {
             std::string strNetmask = strSubnet.substr(slash + 1);
@@ -713,9 +716,9 @@ std::string NetworkErrorString(int err)
 {
     char buf[256];
     buf[0] = 0;
-/* Too bad there are two incompatible implementations of the
+    /* Too bad there are two incompatible implementations of the
      * thread-safe strerror. */
-    const char *s;
+    const char* s;
 #ifdef STRERROR_R_CHAR_P /* GNU variant can return a pointer outside the passed buffer */
     s = strerror_r(err, buf, sizeof(buf));
 #else                    /* POSIX variant always returns message in buffer */

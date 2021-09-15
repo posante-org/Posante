@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,10 +12,10 @@
 #include "guiconstants.h"
 #include "guiutil.h"
 #include "walletmodel.h"
-#include "qt/pivx/qtutils.h"
-#include "qt/pivx/loadingdialog.h"
-#include "qt/pivx/defaultdialog.h"
-#include "qt/pivx/pivxgui.h"
+#include "qt/posante/qtutils.h"
+#include "qt/posante/loadingdialog.h"
+#include "qt/posante/defaultdialog.h"
+#include "qt/posante/posantegui.h"
 #include <QDebug>
 
 #include <QKeyEvent>
@@ -141,9 +142,9 @@ AskPassphraseDialog::AskPassphraseDialog(Mode mode, QWidget* parent, WalletModel
 void AskPassphraseDialog::onWatchClicked()
 {
     int state = btnWatch->checkState();
-    ui->passEdit3->setEchoMode(state == Qt::Checked ? QLineEdit::Normal : QLineEdit::Password );
-    ui->passEdit2->setEchoMode(state== Qt::Checked ? QLineEdit::Normal : QLineEdit::Password );
-    ui->passEdit1->setEchoMode(state == Qt::Checked ? QLineEdit::Normal : QLineEdit::Password );
+    ui->passEdit3->setEchoMode(state == Qt::Checked ? QLineEdit::Normal : QLineEdit::Password);
+    ui->passEdit2->setEchoMode(state == Qt::Checked ? QLineEdit::Normal : QLineEdit::Password);
+    ui->passEdit1->setEchoMode(state == Qt::Checked ? QLineEdit::Normal : QLineEdit::Password);
 }
 
 AskPassphraseDialog::~AskPassphraseDialog()
@@ -155,10 +156,12 @@ AskPassphraseDialog::~AskPassphraseDialog()
     delete ui;
 }
 
-void AskPassphraseDialog::showEvent(QShowEvent *event)
+void AskPassphraseDialog::showEvent(QShowEvent* event)
 {
-    if (mode == Mode::Encrypt && ui->passEdit2) ui->passEdit2->setFocus();
-    else if (ui->passEdit1) ui->passEdit1->setFocus();
+    if (mode == Mode::Encrypt && ui->passEdit2)
+        ui->passEdit2->setFocus();
+    else if (ui->passEdit1)
+        ui->passEdit1->setFocus();
 }
 
 void AskPassphraseDialog::accept()
@@ -183,15 +186,14 @@ void AskPassphraseDialog::accept()
         }
         hide();
         bool ret = openStandardDialog(
-                tr("Confirm wallet encryption"),
-                "<b>" + tr("WARNING") + ":</b> " + tr("If you encrypt your wallet and lose your passphrase, you will") +
+            tr("Confirm wallet encryption"),
+            "<b>" + tr("WARNING") + ":</b> " + tr("If you encrypt your wallet and lose your passphrase, you will") +
                 " <b>" + tr("LOSE ALL OF YOUR COINS") + "</b>!<br><br>" + tr("Are you sure you wish to encrypt your wallet?"),
-                tr("ENCRYPT"), tr("CANCEL")
-        );
+            tr("ENCRYPT"), tr("CANCEL"));
         if (ret) {
             newpassCache = newpass1;
-            PIVXGUI* window = static_cast<PIVXGUI*>(parentWidget());
-            LoadingDialog *dialog = new LoadingDialog(window);
+            PosanteGUI* window = static_cast<PosanteGUI*>(parentWidget());
+            LoadingDialog* dialog = new LoadingDialog(window);
             dialog->execute(this, 1);
             openDialogWithOpaqueBackgroundFullScreen(dialog, window);
         } else {
@@ -201,7 +203,7 @@ void AskPassphraseDialog::accept()
     case Mode::UnlockAnonymize:
         if (!model->setWalletLocked(false, oldpass, true)) {
             QMessageBox::critical(this, tr("Wallet unlock failed"),
-                                  tr("The passphrase entered for the wallet decryption was incorrect."));
+                tr("The passphrase entered for the wallet decryption was incorrect."));
         } else {
             QDialog::accept(); // Success
         }
@@ -226,7 +228,7 @@ void AskPassphraseDialog::accept()
         if (newpass1 == newpass2) {
             if (model->changePassphrase(oldpass, newpass1)) {
                 hide();
-                openStandardDialog(tr("Wallet encrypted"),tr("Wallet passphrase was successfully changed."));
+                openStandardDialog(tr("Wallet encrypted"), tr("Wallet passphrase was successfully changed."));
                 QDialog::accept(); // Success
             } else {
                 QMessageBox::critical(this, tr("Wallet encryption failed"),
@@ -245,7 +247,7 @@ void AskPassphraseDialog::textChanged()
     // Validate input, set Ok button to enabled when acceptable
     bool acceptable = false;
     switch (mode) {
-    case Mode::Encrypt: // New passphrase x2
+    case Mode::Encrypt:                                                                      // New passphrase x2
         acceptable = !ui->passEdit2->text().isEmpty() && !ui->passEdit3->text().isEmpty() && // Passphrases are not empty
                      ui->passEdit2->text() == ui->passEdit3->text();                         // Passphrases match eachother
         break;
@@ -254,7 +256,7 @@ void AskPassphraseDialog::textChanged()
     case Mode::Decrypt:
         acceptable = !ui->passEdit1->text().isEmpty();
         break;
-    case Mode::ChangePass: // Old passphrase x1, new passphrase x2
+    case Mode::ChangePass:                                                                   // Old passphrase x1, new passphrase x2
         acceptable = !ui->passEdit2->text().isEmpty() && !ui->passEdit3->text().isEmpty() && // New passphrases are not empty
                      ui->passEdit2->text() == ui->passEdit3->text() &&                       // New passphrases match eachother
                      !ui->passEdit1->text().isEmpty();                                       // Old passphrase is not empty
@@ -310,8 +312,8 @@ bool AskPassphraseDialog::eventFilter(QObject* object, QEvent* event)
 
 bool AskPassphraseDialog::openStandardDialog(QString title, QString body, QString okBtn, QString cancelBtn)
 {
-    PIVXGUI* gui = static_cast<PIVXGUI*>(parentWidget());
-    DefaultDialog *confirmDialog = new DefaultDialog(gui);
+    PosanteGUI* gui = static_cast<PosanteGUI*>(parentWidget());
+    DefaultDialog* confirmDialog = new DefaultDialog(gui);
     confirmDialog->setText(title, body, okBtn, cancelBtn);
     confirmDialog->adjustSize();
     openDialogWithOpaqueBackground(confirmDialog, gui);
@@ -343,28 +345,27 @@ void AskPassphraseDialog::updateWarningsLabel()
 void AskPassphraseDialog::warningMessage()
 {
     hide();
-    static_cast<PIVXGUI*>(parentWidget())->showHide(true);
+    static_cast<PosanteGUI*>(parentWidget())->showHide(true);
     openStandardDialog(
-            tr("Wallet encrypted"),
-            "<qt>" +
-            tr("PIVX will close now to finish the encryption process. "
+        tr("Wallet encrypted"),
+        "<qt>" +
+            tr("Posante will close now to finish the encryption process. "
                "Remember that encrypting your wallet cannot fully protect "
-               "your PIVs from being stolen by malware infecting your computer.") +
+               "your POSAs from being stolen by malware infecting your computer.") +
             "<br><br><b>" +
             tr("IMPORTANT: Any previous backups you have made of your wallet file "
                "should be replaced with the newly generated, encrypted wallet file. "
                "For security reasons, previous backups of the unencrypted wallet file "
                "will become useless as soon as you start using the new, encrypted wallet.") +
             "</b></qt>",
-            tr("OK")
-            );
+        tr("OK"));
     QApplication::quit();
 }
 
 void AskPassphraseDialog::errorEncryptingWallet()
 {
     QMessageBox::critical(this, tr("Wallet encryption failed"),
-                          tr("Wallet encryption failed due to an internal error. Your wallet was not encrypted."));
+        tr("Wallet encryption failed due to an internal error. Your wallet was not encrypted."));
 }
 
 void AskPassphraseDialog::run(int type)
@@ -389,7 +390,7 @@ void AskPassphraseDialog::onError(QString error, int type)
     QMetaObject::invokeMethod(this, "errorEncryptingWallet", Qt::QueuedConnection);
 }
 
-void AskPassphraseDialog::initWatch(QWidget *parent)
+void AskPassphraseDialog::initWatch(QWidget* parent)
 {
     btnWatch = new QCheckBox(parent);
     setCssProperty(btnWatch, "btn-watch-password");

@@ -3,9 +3,9 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "cuckoocache.h"
-#include "script/sigcache.h"
-#include "test/test_pivx.h"
 #include "random.h"
+#include "script/sigcache.h"
+#include "test/test_posante.h"
 
 #include <thread>
 
@@ -37,7 +37,6 @@ void insecure_GetRandHash(uint256& t)
     for (uint8_t j = 0; j < 8; ++j)
         *(ptr++) = insecure_rand.rand32();
 }
-
 
 
 /* Test that no values not inserted into the cache are read out of it.
@@ -126,7 +125,7 @@ BOOST_AUTO_TEST_CASE(cuckoocache_hit_rate_ok)
     double HitRateThresh = 0.98;
     size_t megabytes = 4;
     for (double load = 0.1; load < 2; load *= 2) {
-        double hits = test_cache<CuckooCache::cache<uint256, SignatureCacheHasher>>(megabytes, load);
+        double hits = test_cache<CuckooCache::cache<uint256, SignatureCacheHasher> >(megabytes, load);
         BOOST_CHECK(normalize_hit_rate(hits, load) > HitRateThresh);
     }
 }
@@ -194,7 +193,7 @@ void test_cache_erase(size_t megabytes)
 BOOST_AUTO_TEST_CASE(cuckoocache_erase_ok)
 {
     size_t megabytes = 4;
-    test_cache_erase<CuckooCache::cache<uint256, SignatureCacheHasher>>(megabytes);
+    test_cache_erase<CuckooCache::cache<uint256, SignatureCacheHasher> >(megabytes);
 }
 
 template <typename Cache>
@@ -237,9 +236,9 @@ void test_cache_erase_parallel(size_t megabytes)
         */
         threads.emplace_back([&, x] {
             boost::shared_lock<boost::shared_mutex> l(mtx);
-            size_t ntodo = (n_insert/4)/3;
-            size_t start = ntodo*x;
-            size_t end = ntodo*(x+1);
+            size_t ntodo = (n_insert / 4) / 3;
+            size_t start = ntodo * x;
+            size_t end = ntodo * (x + 1);
             for (uint32_t i = start; i < end; ++i)
                 set.contains(hashes[i], true);
         });
@@ -281,7 +280,7 @@ void test_cache_erase_parallel(size_t megabytes)
 BOOST_AUTO_TEST_CASE(cuckoocache_erase_parallel_ok)
 {
     size_t megabytes = 4;
-    test_cache_erase_parallel<CuckooCache::cache<uint256, SignatureCacheHasher>>(megabytes);
+    test_cache_erase_parallel<CuckooCache::cache<uint256, SignatureCacheHasher> >(megabytes);
 }
 
 
@@ -377,7 +376,7 @@ void test_cache_generations()
 }
 BOOST_AUTO_TEST_CASE(cuckoocache_generations)
 {
-    test_cache_generations<CuckooCache::cache<uint256, SignatureCacheHasher>>();
+    test_cache_generations<CuckooCache::cache<uint256, SignatureCacheHasher> >();
 }
 
 BOOST_AUTO_TEST_SUITE_END();

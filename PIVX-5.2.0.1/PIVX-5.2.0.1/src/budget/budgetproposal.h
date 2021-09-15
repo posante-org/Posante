@@ -1,5 +1,6 @@
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,9 +11,9 @@
 #include "net.h"
 #include "streams.h"
 
-static const CAmount PROPOSAL_FEE_TX = (50 * COIN);
-static const CAmount BUDGET_FEE_TX_OLD = (50 * COIN);
-static const CAmount BUDGET_FEE_TX = (5 * COIN);
+static const CAmount PROPOSAL_FEE_TX = (0.35 * COIN);
+static const CAmount BUDGET_FEE_TX_OLD = (0.35 * COIN);
+static const CAmount BUDGET_FEE_TX = (0.35 * COIN);
 static const int64_t BUDGET_VOTE_UPDATE_MIN = 60 * 60;
 
 class CBudgetManager;

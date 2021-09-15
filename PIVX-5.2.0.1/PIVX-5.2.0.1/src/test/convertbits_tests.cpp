@@ -2,9 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <utilstrencodings.h>
-#include <test/test_pivx.h>
 #include "sapling/sapling_util.h"
+#include <test/test_posante.h>
+#include <utilstrencodings.h>
 
 #include <boost/test/unit_test.hpp>
 

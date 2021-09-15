@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2017-2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -18,7 +19,7 @@ std::string FormatMoney(const CAmount& n, bool fPlus)
     int64_t n_abs = (n > 0 ? n : -n);
     int64_t quotient = n_abs / COIN;
     int64_t remainder = n_abs % COIN;
-    std::string str = strprintf("%d.%08d", quotient, remainder);
+    std::string str = strprintf("%d.%06d", quotient, remainder);
 
     // Right-trim excess zeros before the decimal point:
     int nTrim = 0;

@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2016-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -46,7 +47,8 @@ public:
     Coin(CTxOut&& outIn, int nHeightIn, bool fCoinBaseIn, bool fCoinStakeIn) : fCoinBase(fCoinBaseIn), fCoinStake(fCoinStakeIn), out(std::move(outIn)), nHeight(nHeightIn) {}
     Coin(const CTxOut& outIn, int nHeightIn, bool fCoinBaseIn, bool fCoinStakeIn) : fCoinBase(fCoinBaseIn), fCoinStake(fCoinStakeIn), out(outIn), nHeight(nHeightIn) {}
 
-    void Clear() {
+    void Clear()
+    {
         out.SetNull();
         fCoinBase = false;
         fCoinStake = false;
@@ -54,26 +56,30 @@ public:
     }
 
     //! empty constructor
-    Coin() : fCoinBase(false), fCoinStake(false), nHeight(0) { }
+    Coin() : fCoinBase(false), fCoinStake(false), nHeight(0) {}
 
-    bool IsCoinBase() const {
+    bool IsCoinBase() const
+    {
         return fCoinBase;
     }
 
-    bool IsCoinStake() const {
+    bool IsCoinStake() const
+    {
         return fCoinStake;
     }
 
-    template<typename Stream>
-    void Serialize(Stream &s) const {
+    template <typename Stream>
+    void Serialize(Stream& s) const
+    {
         assert(!IsSpent());
         uint32_t code = nHeight * 4 + (fCoinBase ? 2 : 0) + (fCoinStake ? 1 : 0);
         ::Serialize(s, VARINT(code));
         ::Serialize(s, CTxOutCompressor(REF(out)));
     }
 
-    template<typename Stream>
-    void Unserialize(Stream &s) {
+    template <typename Stream>
+    void Unserialize(Stream& s)
+    {
         uint32_t code = 0;
         ::Unserialize(s, VARINT(code));
         nHeight = code >> 2;
@@ -82,11 +88,13 @@ public:
         ::Unserialize(s, REF(CTxOutCompressor(out)));
     }
 
-    bool IsSpent() const {
+    bool IsSpent() const
+    {
         return out.IsNull();
     }
 
-    size_t DynamicMemoryUsage() const {
+    size_t DynamicMemoryUsage() const
+    {
         return memusage::DynamicUsage(out.scriptPubKey);
     }
 };
@@ -105,7 +113,8 @@ public:
      * unordered_map will behave unpredictably if the custom hasher returns a
      * uint64_t, resulting in failures when syncing the chain (#4634).
      */
-    size_t operator()(const COutPoint& id) const {
+    size_t operator()(const COutPoint& id) const
+    {
         return SipHashUint256Extra(k0, k1, id.hash, id.n);
     }
 };
@@ -125,7 +134,8 @@ public:
      * unordered_map will behave unpredictably if the custom hasher returns a
      * uint64_t, resulting in failures when syncing the chain (#4634).
      */
-    size_t operator()(const uint256& txid) const {
+    size_t operator()(const uint256& txid) const
+    {
         return SipHashUint256(k0, k1, txid);
     }
 };
@@ -145,9 +155,8 @@ struct CCoinsCacheEntry {
 
 // Sapling
 
-struct CAnchorsSaplingCacheEntry
-{
-    bool entered; // This will be false if the anchor is removed from the cache
+struct CAnchorsSaplingCacheEntry {
+    bool entered;           // This will be false if the anchor is removed from the cache
     SaplingMerkleTree tree; // The tree itself
     unsigned char flags;
 
@@ -158,8 +167,7 @@ struct CAnchorsSaplingCacheEntry
     CAnchorsSaplingCacheEntry() : entered(false), flags(0) {}
 };
 
-struct CNullifiersCacheEntry
-{
+struct CNullifiersCacheEntry {
     bool entered; // If the nullifier is spent or not
     unsigned char flags;
 
@@ -179,7 +187,7 @@ typedef std::unordered_map<COutPoint, CCoinsCacheEntry, SaltedOutpointHasher> CC
 class CCoinsViewCursor
 {
 public:
-    CCoinsViewCursor(const uint256 &hashBlockIn): hashBlock(hashBlockIn) {}
+    CCoinsViewCursor(const uint256& hashBlockIn) : hashBlock(hashBlockIn) {}
     virtual ~CCoinsViewCursor() {}
 
     virtual bool GetKey(COutPoint& key) const = 0;
@@ -191,7 +199,8 @@ public:
     virtual void Next() = 0;
 
     //! Get best block at the time this cursor was created
-    const uint256 &GetBestBlock() const { return hashBlock; }
+    const uint256& GetBestBlock() const { return hashBlock; }
+
 private:
     uint256 hashBlock;
 };
@@ -219,10 +228,10 @@ public:
     //! Do a bulk modification (multiple Coin changes + BestBlock change).
     //! The passed mapCoins can be modified.
     virtual bool BatchWrite(CCoinsMap& mapCoins,
-                            const uint256& hashBlock,
-                            const uint256& hashSaplingAnchor,
-                            CAnchorsSaplingMap& mapSaplingAnchors,
-                            CNullifiersMap& mapSaplingNullifiers);
+        const uint256& hashBlock,
+        const uint256& hashSaplingAnchor,
+        CAnchorsSaplingMap& mapSaplingAnchors,
+        CNullifiersMap& mapSaplingNullifiers);
 
     //! Get a cursor to iterate over the whole state
     virtual CCoinsViewCursor* Cursor() const;
@@ -235,10 +244,10 @@ public:
 
     // Sapling
     //! Retrieve the tree (Sapling) at a particular anchored root in the chain
-    virtual bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
+    virtual bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree& tree) const;
 
     //! Determine whether a nullifier is spent or not
-    virtual bool GetNullifier(const uint256 &nullifier) const;
+    virtual bool GetNullifier(const uint256& nullifier) const;
 
     //! Get the current "tip" or the latest anchored tree root in the chain
     virtual uint256 GetBestAnchor() const;
@@ -262,14 +271,14 @@ public:
     size_t EstimateSize() const override;
 
     bool BatchWrite(CCoinsMap& mapCoins,
-                    const uint256& hashBlock,
-                    const uint256& hashSaplingAnchor,
-                    CAnchorsSaplingMap& mapSaplingAnchors,
-                    CNullifiersMap& mapSaplingNullifiers) override;
+        const uint256& hashBlock,
+        const uint256& hashSaplingAnchor,
+        CAnchorsSaplingMap& mapSaplingAnchors,
+        CNullifiersMap& mapSaplingNullifiers) override;
 
     // Sapling
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override;
-    bool GetNullifier(const uint256 &nullifier) const override;
+    bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree& tree) const override;
+    bool GetNullifier(const uint256& nullifier) const override;
     uint256 GetBestAnchor() const override;
 };
 
@@ -298,20 +307,21 @@ protected:
     mutable size_t cachedCoinsUsage;
 
 public:
-    CCoinsViewCache(CCoinsView *baseIn);
+    CCoinsViewCache(CCoinsView* baseIn);
 
     // Sapling methods
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override;
-    bool GetNullifier(const uint256 &nullifier) const override;
+    bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree& tree) const override;
+    bool GetNullifier(const uint256& nullifier) const override;
     uint256 GetBestAnchor() const override;
 
     // Adds the tree to mapSaplingAnchors
     // and sets the current commitment root to this root.
-    template<typename Tree> void PushAnchor(const Tree &tree);
+    template <typename Tree>
+    void PushAnchor(const Tree& tree);
 
     // Removes the current commitment root from mapAnchors and sets
     // the new current root.
-    void PopAnchor(const uint256 &rt);
+    void PopAnchor(const uint256& rt);
 
     // Marks nullifiers for a given transaction as spent or not.
     void SetNullifiers(const CTransaction& tx, bool spent);
@@ -326,10 +336,10 @@ public:
     void SetBestBlock(const uint256& hashBlock);
 
     bool BatchWrite(CCoinsMap& mapCoins,
-                    const uint256& hashBlock,
-                    const uint256& hashSaplingAnchor,
-                    CAnchorsSaplingMap& mapSaplingAnchors,
-                    CNullifiersMap& mapSaplingNullifiers) override;
+        const uint256& hashBlock,
+        const uint256& hashSaplingAnchor,
+        CAnchorsSaplingMap& mapSaplingAnchors,
+        CNullifiersMap& mapSaplingNullifiers) override;
 
     /**
      * Check if we have the given utxo already loaded in this cache.
@@ -356,7 +366,7 @@ public:
      * If no unspent output exists for the passed outpoint, this call
      * has no effect.
      */
-    void SpendCoin(const COutPoint &outpoint, Coin* moveto = nullptr);
+    void SpendCoin(const COutPoint& outpoint, Coin* moveto = nullptr);
 
     /**
      * Push the modifications applied to this cache to its base.
@@ -368,7 +378,7 @@ public:
     /**
      * Removes the UTXO with the given outpoint from the cache, if it is not modified.
      */
-    void Uncache(const COutPoint &outpoint);
+    void Uncache(const COutPoint& outpoint);
 
     //! Calculate the size of the cache (in number of transaction outputs)
     unsigned int GetCacheSize() const;
@@ -377,7 +387,7 @@ public:
     size_t DynamicMemoryUsage() const;
 
     /**
-     * Amount of pivx coming in to a transaction
+     * Amount of posante coming in to a transaction
      * Note that lightweight clients may not know anything besides the hash of previous transactions,
      * so may not be able to calculate this.
      *
@@ -394,7 +404,7 @@ public:
      * that are already in the chain.  These are the inputs that will age and increase priority as
      * new blocks are added to the chain.
      */
-    double GetPriority(const CTransaction& tx, int nHeight, CAmount &inChainInputValue) const;
+    double GetPriority(const CTransaction& tx, int nHeight, CAmount& inChainInputValue) const;
 
     /*
      * Return the depth of a coin at height nHeight, or -1 if not found
@@ -406,50 +416,41 @@ public:
      */
     CAmount GetTotalAmount() const;
 
-    /*
-     * Prune zerocoin mints and frozen outputs - do it once, after initialization
-     */
-    bool PruneInvalidEntries();
-
-
 private:
     CCoinsMap::iterator FetchCoin(const COutPoint& outpoint) const;
 
     //! Generalized interface for popping anchors
-    template<typename Tree, typename Cache, typename CacheEntry>
+    template <typename Tree, typename Cache, typename CacheEntry>
     void AbstractPopAnchor(
-            const uint256 &newrt,
-            Cache &cacheAnchors,
-            uint256 &hash
-    );
+        const uint256& newrt,
+        Cache& cacheAnchors,
+        uint256& hash);
 
     //! Generalized interface for pushing anchors
-    template<typename Tree, typename Cache, typename CacheIterator, typename CacheEntry>
+    template <typename Tree, typename Cache, typename CacheIterator, typename CacheEntry>
     void AbstractPushAnchor(
-            const Tree &tree,
-            Cache &cacheAnchors,
-            uint256 &hash
-    );
+        const Tree& tree,
+        Cache& cacheAnchors,
+        uint256& hash);
 
     //! Interface for bringing an anchor into the cache.
-    template<typename Tree>
+    template <typename Tree>
     void BringBestAnchorIntoCache(
-            const uint256 &currentRoot,
-            Tree &tree
-    );
+        const uint256& currentRoot,
+        Tree& tree);
 
     /**
       * By making the copy constructor private, we prevent accidentally using it when one intends to create a cache on top of a base cache.
       */
-    CCoinsViewCache(const CCoinsViewCache &);
+    CCoinsViewCache(const CCoinsViewCache&);
 };
 
 //! Utility function to add all of a transaction's outputs to a cache.
-// PIVX: When check is false, this assumes that overwrites are never possible due to BIP34 always in effect
+// Posante: When check is false, this assumes that overwrites are never possible due to BIP34 always in effect
 // When check is true, the underlying view may be queried to determine whether an addition is
 // an overwrite.
 // When fSkipInvalid is true, the invalid_out list is checked before adding the coin.
-void AddCoins(CCoinsViewCache& cache, const CTransaction& tx, int nHeight, bool check = false, bool fSkipInvalid = false);
+void AddCoins(CCoinsViewCache& cache, const CTransaction& tx, int nHeight, bool check = false);
 
 //! Utility function to find any unspent output with a given txid.
 const Coin& AccessByTxid(const CCoinsViewCache& cache, const uint256& txid);

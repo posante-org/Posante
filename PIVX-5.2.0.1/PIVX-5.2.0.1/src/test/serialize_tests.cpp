@@ -1,19 +1,20 @@
 // Copyright (c) 2012-2013 The Bitcoin Core developers
 // Copyright (c) 2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
+#include "hash.h"
 #include "optional.h"
 #include "serialize.h"
 #include "streams.h"
-#include "hash.h"
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include <stdint.h>
 
 #include <boost/test/unit_test.hpp>
 
-template<typename T>
+template <typename T>
 void check_ser_rep(T thing, std::vector<unsigned char> expected)
 {
     CDataStream ss(SER_DISK, 0);
@@ -41,13 +42,15 @@ protected:
     std::string stringval;
     const char* charstrval;
     CTransactionRef txval;
+
 public:
     CSerializeMethodsTestSingle() = default;
-    CSerializeMethodsTestSingle(int intvalin, bool boolvalin, std::string stringvalin, const char* charstrvalin, const CTransaction& txvalin) : intval(intvalin), boolval(boolvalin), stringval(std::move(stringvalin)), charstrval(charstrvalin), txval(MakeTransactionRef(txvalin)){}
+    CSerializeMethodsTestSingle(int intvalin, bool boolvalin, std::string stringvalin, const char* charstrvalin, const CTransaction& txvalin) : intval(intvalin), boolval(boolvalin), stringval(std::move(stringvalin)), charstrval(charstrvalin), txval(MakeTransactionRef(txvalin)) {}
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
+    inline void SerializationOp(Stream& s, Operation ser_action)
+    {
         READWRITE(intval);
         READWRITE(boolval);
         READWRITE(stringval);
@@ -57,11 +60,11 @@ public:
 
     bool operator==(const CSerializeMethodsTestSingle& rhs)
     {
-        return  intval == rhs.intval && \
-                boolval == rhs.boolval && \
-                stringval == rhs.stringval && \
-                strcmp(charstrval, rhs.charstrval) == 0 && \
-                *txval == *rhs.txval;
+        return intval == rhs.intval &&
+               boolval == rhs.boolval &&
+               stringval == rhs.stringval &&
+               strcmp(charstrval, rhs.charstrval) == 0 &&
+               *txval == *rhs.txval;
     }
 };
 
@@ -72,7 +75,8 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
+    inline void SerializationOp(Stream& s, Operation ser_action)
+    {
         READWRITEMANY(intval, boolval, stringval, FLATDATA(charstrval), txval);
     }
 };
@@ -191,9 +195,9 @@ BOOST_AUTO_TEST_CASE(doubles)
 
 BOOST_AUTO_TEST_CASE(boost_optional)
 {
-    check_ser_rep<Optional<unsigned char>>(0xff, {0x01, 0xff});
-    check_ser_rep<Optional<unsigned char>>(boost::none, {0x00});
-    check_ser_rep<Optional<std::string>>(std::string("Test"), {0x01, 0x04, 'T', 'e', 's', 't'});
+    check_ser_rep<Optional<unsigned char> >(0xff, {0x01, 0xff});
+    check_ser_rep<Optional<unsigned char> >(boost::none, {0x00});
+    check_ser_rep<Optional<std::string> >(std::string("Test"), {0x01, 0x04, 'T', 'e', 's', 't'});
 }
 
 BOOST_AUTO_TEST_CASE(varints)
@@ -208,7 +212,7 @@ BOOST_AUTO_TEST_CASE(varints)
         BOOST_CHECK(size == ss.size());
     }
 
-    for (uint64_t i = 0;  i < 100000000000ULL; i += 999999937) {
+    for (uint64_t i = 0; i < 100000000000ULL; i += 999999937) {
         ss << VARINT(i);
         size += ::GetSerializeSize(VARINT(i), 0, 0);
         BOOST_CHECK(size == ss.size());
@@ -221,7 +225,7 @@ BOOST_AUTO_TEST_CASE(varints)
         BOOST_CHECK_MESSAGE(i == j, "decoded:" << j << " expected:" << i);
     }
 
-    for (uint64_t i = 0;  i < 100000000000ULL; i += 999999937) {
+    for (uint64_t i = 0; i < 100000000000ULL; i += 999999937) {
         uint64_t j = -1;
         ss >> VARINT(j);
         BOOST_CHECK_MESSAGE(i == j, "decoded:" << j << " expected:" << i);
@@ -233,15 +237,13 @@ BOOST_AUTO_TEST_CASE(compactsize)
     CDataStream ss(SER_DISK, 0);
     std::vector<char>::size_type i, j;
 
-    for (i = 1; i <= MAX_SIZE; i *= 2)
-    {
-        WriteCompactSize(ss, i-1);
+    for (i = 1; i <= MAX_SIZE; i *= 2) {
+        WriteCompactSize(ss, i - 1);
         WriteCompactSize(ss, i);
     }
-    for (i = 1; i <= MAX_SIZE; i *= 2)
-    {
+    for (i = 1; i <= MAX_SIZE; i *= 2) {
         j = ReadCompactSize(ss);
-        BOOST_CHECK_MESSAGE((i-1) == j, "decoded:" << j << " expected:" << (i-1));
+        BOOST_CHECK_MESSAGE((i - 1) == j, "decoded:" << j << " expected:" << (i - 1));
         j = ReadCompactSize(ss);
         BOOST_CHECK_MESSAGE(i == j, "decoded:" << j << " expected:" << i);
     }
@@ -318,7 +320,7 @@ BOOST_AUTO_TEST_CASE(insert_delete)
     BOOST_CHECK_EQUAL(ss[4], (char)0xff);
     BOOST_CHECK_EQUAL(ss[5], c);
 
-    ss.insert(ss.begin()+2, c);
+    ss.insert(ss.begin() + 2, c);
     BOOST_CHECK_EQUAL(ss.size(), 7);
     BOOST_CHECK_EQUAL(ss[2], c);
 
@@ -327,11 +329,11 @@ BOOST_AUTO_TEST_CASE(insert_delete)
     BOOST_CHECK_EQUAL(ss.size(), 6);
     BOOST_CHECK_EQUAL(ss[0], 0);
 
-    ss.erase(ss.begin()+ss.size()-1);
+    ss.erase(ss.begin() + ss.size() - 1);
     BOOST_CHECK_EQUAL(ss.size(), 5);
     BOOST_CHECK_EQUAL(ss[4], (char)0xff);
 
-    ss.erase(ss.begin()+1);
+    ss.erase(ss.begin() + 1);
     BOOST_CHECK_EQUAL(ss.size(), 4);
     BOOST_CHECK_EQUAL(ss[0], 0);
     BOOST_CHECK_EQUAL(ss[1], 1);

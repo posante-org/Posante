@@ -1,9 +1,10 @@
 // Copyright (c) 2016-2020 The ZCash developers
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include "sapling/address.h"
 #include "sapling/key_io_sapling.h"
@@ -20,7 +21,7 @@ BOOST_AUTO_TEST_CASE(ps_address_test)
 {
     SelectParams(CBaseChainParams::REGTEST);
 
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    std::vector<unsigned char, secure_allocator<unsigned char> > rawSeed(32);
     HDSeed seed(rawSeed);
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
 
@@ -57,7 +58,7 @@ BOOST_AUTO_TEST_CASE(EncodeAndDecodeSapling)
 {
     SelectParams(CBaseChainParams::MAIN);
 
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    std::vector<unsigned char, secure_allocator<unsigned char> > rawSeed(32);
     HDSeed seed(rawSeed);
     libzcash::SaplingExtendedSpendingKey m = libzcash::SaplingExtendedSpendingKey::Master(seed);
 
@@ -66,8 +67,8 @@ BOOST_AUTO_TEST_CASE(EncodeAndDecodeSapling)
         {
             std::string sk_string = KeyIO::EncodeSpendingKey(sk);
             BOOST_CHECK(
-                    sk_string.substr(0, 26) ==
-                    Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY));
+                sk_string.substr(0, 26) ==
+                Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY));
 
             auto spendingkey2 = KeyIO::DecodeSpendingKey(sk_string);
             BOOST_CHECK(IsValidSpendingKey(spendingkey2));
@@ -97,8 +98,8 @@ BOOST_AUTO_TEST_CASE(EncodeAndDecodeSapling)
 
             std::string addr_string = KeyIO::EncodePaymentAddress(addr);
             BOOST_CHECK(
-                    addr_string.substr(0, 2) ==
-                    Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS));
+                addr_string.substr(0, 2) ==
+                Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS));
 
             auto paymentaddr2 = KeyIO::DecodePaymentAddress(addr_string);
             BOOST_CHECK(IsValidPaymentAddress(paymentaddr2));

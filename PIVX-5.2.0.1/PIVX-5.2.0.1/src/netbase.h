@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2015 The Bitcoin developers
 // Copyright (c) 2017-2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,7 +8,7 @@
 #define BITCOIN_NETBASE_H
 
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
 #include "compat.h"
@@ -29,8 +30,8 @@ static const int DEFAULT_NAME_LOOKUP = true;
 class proxyType
 {
 public:
-    proxyType(): randomize_credentials(false) {}
-    proxyType(const CService &_proxy, bool _randomize_credentials=false): proxy(_proxy), randomize_credentials(_randomize_credentials) {}
+    proxyType() : randomize_credentials(false) {}
+    proxyType(const CService& _proxy, bool _randomize_credentials = false) : proxy(_proxy), randomize_credentials(_randomize_credentials) {}
 
     bool IsValid() const { return proxy.IsValid(); }
 
@@ -41,10 +42,10 @@ public:
 enum Network ParseNetwork(std::string net);
 std::string GetNetworkName(enum Network net);
 void SplitHostPort(std::string in, int& portOut, std::string& hostOut);
-bool SetProxy(enum Network net, const proxyType &addrProxy);
+bool SetProxy(enum Network net, const proxyType& addrProxy);
 bool GetProxy(enum Network net, proxyType& proxyInfoOut);
 bool IsProxy(const CNetAddr& addr);
-bool SetNameProxy(const proxyType &addrProxy);
+bool SetNameProxy(const proxyType& addrProxy);
 bool HaveNameProxy();
 bool LookupHost(const char* pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions, bool fAllowLookup);
 bool LookupHost(const char* pszName, CNetAddr& addr, bool fAllowLookup);

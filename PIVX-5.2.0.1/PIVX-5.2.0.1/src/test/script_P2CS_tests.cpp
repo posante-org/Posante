@@ -1,7 +1,8 @@
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include "base58.h"
 #include "key.h"
@@ -62,7 +63,7 @@ static CScript GetNewP2CS(CKey& stakerKey, CKey& ownerKey)
     stakerKey = DecodeSecret("91yo52JPHDVUG3jXWLKGyzEdjn1a9nbnurLdmQEf2UzbgzkTc2c");
     ownerKey = DecodeSecret("92KgNFNfmVVJRQuzssETc7NhwufGuHsLvPQxW9Nwmxs7PB4ByWB");
     return GetScriptForStakeDelegation(stakerKey.GetPubKey().GetID(),
-                                       ownerKey.GetPubKey().GetID());
+        ownerKey.GetPubKey().GetID());
 }
 
 static CScript GetDummyP2CS(const CKeyID& dummyKeyID)
@@ -104,7 +105,7 @@ static CMutableTransaction CreateNewColdStakeTx(CScript& scriptP2CS, CKey& stake
 
 void SignColdStake(CMutableTransaction& tx, int nIn, const CScript& prevScript, const CKey& key, bool fStaker)
 {
-    assert(nIn < (int) tx.vin.size());
+    assert(nIn < (int)tx.vin.size());
     tx.vin[nIn].scriptSig.clear();
     const CTransaction _tx(tx);
     SigVersion sv = _tx.GetRequiredSigVersion();
@@ -112,7 +113,7 @@ void SignColdStake(CMutableTransaction& tx, int nIn, const CScript& prevScript, 
     std::vector<unsigned char> vchSig;
     BOOST_CHECK(key.Sign(hash, vchSig));
     vchSig.push_back((unsigned char)SIGHASH_ALL);
-    std::vector<unsigned char> selector(1, fStaker ? (int) OP_TRUE : OP_FALSE);
+    std::vector<unsigned char> selector(1, fStaker ? (int)OP_TRUE : OP_FALSE);
     tx.vin[nIn].scriptSig << vchSig << selector << ToByteVector(key.GetPubKey());
 }
 
@@ -205,10 +206,7 @@ BOOST_AUTO_TEST_CASE(coldstake_script)
 static CScript GetFakeLockingScript(const CKeyID staker, const CKeyID& owner)
 {
     CScript script;
-    script << opcodetype(0x2F) << opcodetype(0x01) << OP_ROT <<
-            OP_IF << OP_CHECKCOLDSTAKEVERIFY << ToByteVector(staker) <<
-            OP_ELSE << ToByteVector(owner) << OP_DROP <<
-            OP_EQUALVERIFY << OP_CHECKSIG;
+    script << opcodetype(0x2F) << opcodetype(0x01) << OP_ROT << OP_IF << OP_CHECKCOLDSTAKEVERIFY << ToByteVector(staker) << OP_ELSE << ToByteVector(owner) << OP_DROP << OP_EQUALVERIFY << OP_CHECKSIG;
 
     return script;
 }
@@ -239,13 +237,13 @@ BOOST_AUTO_TEST_CASE(fake_script_test)
     CWallet& wallet = *pwalletMain;
     LOCK(wallet.cs_wallet);
     setupWallet(wallet);
-    CKey stakerKey;         // dummy staker key (not in the wallet)
+    CKey stakerKey; // dummy staker key (not in the wallet)
     stakerKey.MakeNewKey(true);
     CKeyID stakerId = stakerKey.GetPubKey().GetID();
     CPubKey ownerPubKey;
     BOOST_ASSERT(wallet.GetKeyFromPool(ownerPubKey));
     const CKeyID& ownerId = ownerPubKey.GetID();
-    CKey ownerKey;          // owner key (in the wallet)
+    CKey ownerKey; // owner key (in the wallet)
     BOOST_ASSERT(wallet.GetKey(ownerId, ownerKey));
 
     const CScript& scriptP2CS = GetFakeLockingScript(stakerId, ownerId);

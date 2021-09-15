@@ -1,5 +1,6 @@
 // Copyright (c) 2011-2013 The Bitcoin developers
 // Copyright (c) 2017-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,8 +8,8 @@
 #define BITCOIN_QT_COINCONTROLDIALOG_H
 
 #include "amount.h"
-#include "qt/pivx/snackbar.h"
 #include "optional.h"
+#include "qt/posante/snackbar.h"
 #include "uint256.h"
 
 #include <QAbstractButton>
@@ -25,14 +26,14 @@ class CCoinControl;
 class CTxMemPool;
 
 struct TotalAmounts {
-    CAmount nPayAmount{0};      // sum of recipients send amount
-    CAmount nAmount{0};         // sum of value of selected inputs
-    CAmount nPayFee{0};         // expected tx fee
-    CAmount nAfterFee{0};       // nAmount - nPayFee
-    CAmount nChange{0};         // nAfterFee - nPayAmount
-    unsigned int nQuantity{0};  // number of selected inputs
-    unsigned int nBytes{0};     // expected tx size
-    bool fDust{false};          // true if any output is below the dust threshold
+    CAmount nPayAmount{0};     // sum of recipients send amount
+    CAmount nAmount{0};        // sum of value of selected inputs
+    CAmount nPayFee{0};        // expected tx fee
+    CAmount nAfterFee{0};      // nAmount - nPayFee
+    CAmount nChange{0};        // nAfterFee - nPayAmount
+    unsigned int nQuantity{0}; // number of selected inputs
+    unsigned int nBytes{0};    // expected tx size
+    bool fDust{false};         // true if any output is below the dust threshold
 };
 
 namespace Ui
@@ -43,11 +44,11 @@ class CoinControlDialog;
 class CCoinControlWidgetItem : public QTreeWidgetItem
 {
 public:
-    explicit CCoinControlWidgetItem(QTreeWidget *parent, int type = Type) : QTreeWidgetItem(parent, type) {}
+    explicit CCoinControlWidgetItem(QTreeWidget* parent, int type = Type) : QTreeWidgetItem(parent, type) {}
     explicit CCoinControlWidgetItem(int type = Type) : QTreeWidgetItem(type) {}
-    explicit CCoinControlWidgetItem(QTreeWidgetItem *parent, int type = Type) : QTreeWidgetItem(parent, type) {}
+    explicit CCoinControlWidgetItem(QTreeWidgetItem* parent, int type = Type) : QTreeWidgetItem(parent, type) {}
 
-    bool operator<(const QTreeWidgetItem &other) const override;
+    bool operator<(const QTreeWidgetItem& other) const override;
 };
 
 class CoinControlDialog : public QDialog
@@ -71,14 +72,14 @@ public:
 
 private:
     Ui::CoinControlDialog* ui{nullptr};
-    SnackBar *snackBar{nullptr};
+    SnackBar* snackBar{nullptr};
     WalletModel* model{nullptr};
     int sortColumn;
     Qt::SortOrder sortOrder;
     bool forDelegation;
     int colCheckBoxWidth_treeMode{110};
     // pair (recipient amount, ishielded recipient)
-    std::vector<std::pair<CAmount, bool>> payAmounts{};
+    std::vector<std::pair<CAmount, bool> > payAmounts{};
     unsigned int nSelectableInputs{0};
 
     // whether should show available utxo or notes.
@@ -96,19 +97,19 @@ private:
 
     // Load a row with coin's data
     void loadAvailableCoin(bool treeMode,
-                           CCoinControlWidgetItem* itemWalletAddress,
-                           QFlags<Qt::ItemFlag> flgCheckbox,
-                           QFlags<Qt::ItemFlag> flgTristate,
-                           int nDisplayUnit,
-                           const QString& sWalletAddress,
-                           const Optional<QString>& stakerAddress,
-                           const QString& sWalletLabel,
-                           const uint256& txhash,
-                           const uint32_t outIndex,
-                           const CAmount nValue,
-                           const int64_t nTime,
-                           const int nDepth,
-                           const bool isChange);
+        CCoinControlWidgetItem* itemWalletAddress,
+        QFlags<Qt::ItemFlag> flgCheckbox,
+        QFlags<Qt::ItemFlag> flgTristate,
+        int nDisplayUnit,
+        const QString& sWalletAddress,
+        const Optional<QString>& stakerAddress,
+        const QString& sWalletLabel,
+        const uint256& txhash,
+        const uint32_t outIndex,
+        const CAmount nValue,
+        const int64_t nTime,
+        const int nDepth,
+        const bool isChange);
 
     // calculate sums for selected amount, number of inputs, change, fee, after fee value, and transaction size
     TotalAmounts getTotals() const;

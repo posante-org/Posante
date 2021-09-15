@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include <config/pivx-config.h>
+#include <config/posante-config.h>
 #endif
 
 #include <thread>
@@ -51,7 +51,7 @@ static void SetInternalName(std::string name) { g_thread_name = std::move(name);
 
 static const std::string empty_string;
 const std::string& util::ThreadGetInternalName() { return empty_string; }
-static void SetInternalName(std::string name) { }
+static void SetInternalName(std::string name) {}
 #endif
 
 void util::ThreadRename(std::string&& name)

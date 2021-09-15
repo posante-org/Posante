@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2013 The Bitcoin developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -30,7 +31,6 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
-    uint256 nAccumulatorCheckpoint;             // only for version 4, 5 and 6.
     uint256 hashFinalSaplingRoot;               // only for version 8+
 
     CBlockHeader()
@@ -49,10 +49,6 @@ public:
         READWRITE(nBits);
         READWRITE(nNonce);
 
-        //zerocoin active, header changes to include accumulator checksum
-        if(nVersion > 3 && nVersion < 7)
-            READWRITE(nAccumulatorCheckpoint);
-
         // Sapling active
         if (nVersion >= 8)
             READWRITE(hashFinalSaplingRoot);
@@ -66,7 +62,6 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        nAccumulatorCheckpoint.SetNull();
         hashFinalSaplingRoot.SetNull();
     }
 
@@ -134,8 +129,6 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
-        if(nVersion > 3 && nVersion < 7)
-            block.nAccumulatorCheckpoint = nAccumulatorCheckpoint;
         if (nVersion >= 8)
             block.hashFinalSaplingRoot   = hashFinalSaplingRoot;
         return block;

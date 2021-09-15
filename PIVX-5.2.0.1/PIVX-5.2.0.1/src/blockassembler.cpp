@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin Core developers
 // Copyright (c) 2021 The PIVX Core developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -47,14 +48,14 @@ public:
 
     bool operator()(const CTxMemPool::txiter a, const CTxMemPool::txiter b)
     {
-        return CompareTxMemPoolEntryByScore()(*b,*a); // Convert to less than
+        return CompareTxMemPoolEntryByScore()(*b, *a); // Convert to less than
     }
 };
 
 int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     int64_t nOldTime = pblock->nTime;
-    int64_t nNewTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+    int64_t nNewTime = std::max(pindexPrev->GetMedianTimePast() + 1, GetAdjustedTime());
 
     if (nOldTime < nNewTime)
         pblock->nTime = nNewTime;
@@ -89,10 +90,10 @@ bool SolveProofOfStake(CBlock* pblock, CBlockIndex* pindexPrev, CWallet* pwallet
     emptyTx.vin.emplace_back();
     emptyTx.vin[0].scriptSig = CScript() << pindexPrev->nHeight + 1 << OP_0;
     pblock->vtx.emplace_back(
-            std::make_shared<const CTransaction>(emptyTx));
+        std::make_shared<const CTransaction>(emptyTx));
     // stake
     pblock->vtx.emplace_back(
-            std::make_shared<const CTransaction>(txCoinStake));
+        std::make_shared<const CTransaction>(txCoinStake));
     return true;
 }
 
@@ -118,12 +119,12 @@ bool CreateCoinbaseTx(CBlock* pblock, const CScript& scriptPubKeyIn, CBlockIndex
     }
 
     pblock->vtx.emplace_back(
-            std::make_shared<const CTransaction>(CTransaction(txNew)));
+        std::make_shared<const CTransaction>(CTransaction(txNew)));
     return true;
 }
 
 BlockAssembler::BlockAssembler(const CChainParams& _chainparams, const bool _defaultPrintPriority)
-        : chainparams(_chainparams), defaultPrintPriority(_defaultPrintPriority)
+    : chainparams(_chainparams), defaultPrintPriority(_defaultPrintPriority)
 {
     // Largest block you're willing to create:
     nBlockMaxSize = gArgs.GetArg("-blockmaxsize", DEFAULT_BLOCK_MAX_SIZE);
@@ -153,18 +154,18 @@ void BlockAssembler::resetBlock()
 }
 
 std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn,
-                                               CWallet* pwallet,
-                                               bool fProofOfStake,
-                                               std::vector<CStakeableOutput>* availableCoins)
+    CWallet* pwallet,
+    bool fProofOfStake,
+    std::vector<CStakeableOutput>* availableCoins)
 {
     resetBlock();
 
     pblocktemplate.reset(new CBlockTemplate());
 
-    if(!pblocktemplate) return nullptr;
+    if (!pblocktemplate) return nullptr;
     pblock = &pblocktemplate->block; // pointer for convenience
 
-    pblocktemplate->vTxFees.push_back(-1); // updated at end
+    pblocktemplate->vTxFees.push_back(-1);   // updated at end
     pblocktemplate->vTxSigOps.push_back(-1); // updated at end
 
     CBlockIndex* pindexPrev = WITH_LOCK(cs_main, return chainActive.Tip());
@@ -179,14 +180,13 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     }
 
     // Depending on the tip height, try to find a coinstake who solves the block or create a coinbase tx.
-    if (!(fProofOfStake ? SolveProofOfStake(pblock, pindexPrev, pwallet, availableCoins)
-                        : CreateCoinbaseTx(pblock, scriptPubKeyIn, pindexPrev))) {
+    if (!(fProofOfStake ? SolveProofOfStake(pblock, pindexPrev, pwallet, availableCoins) : CreateCoinbaseTx(pblock, scriptPubKeyIn, pindexPrev))) {
         return nullptr;
     }
 
     {
         // Add transactions from mempool
-        LOCK2(cs_main,mempool.cs);
+        LOCK2(cs_main, mempool.cs);
         addPriorityTxs();
         addScoreTxs();
     }
@@ -228,7 +228,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         CValidationState state;
         if (!TestBlockValidity(state, *pblock, pindexPrev, false, false, false)) {
             throw std::runtime_error(
-                    strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
+                strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
         }
     }
 
@@ -247,12 +247,9 @@ bool BlockAssembler::isStillDependent(CTxMemPool::txiter iter)
 
 bool BlockAssembler::TestForBlock(CTxMemPool::txiter iter)
 {
-    // Legacy zerocoin transactions are disabled forever.
-    assert(!iter->GetSharedTx()->ContainsZerocoins());
-
     // Don't add shielded transactions if Sapling isn't active
     const bool isShielded = iter->IsShielded();
-    if(isShielded && sporkManager.IsSporkActive(SPORK_20_SAPLING_MAINTENANCE)) {
+    if (isShielded && sporkManager.IsSporkActive(SPORK_20_SAPLING_MAINTENANCE)) {
         return false;
     }
 
@@ -261,7 +258,7 @@ bool BlockAssembler::TestForBlock(CTxMemPool::txiter iter)
         // If the block is so close to full that no more txs will fit
         // or if we've tried more than 50 times to fill remaining space
         // then flag that the block is finished
-        if (nBlockSize >  nBlockMaxSize - 100 || lastFewTxs > 50) {
+        if (nBlockSize > nBlockMaxSize - 100 || lastFewTxs > 50) {
             blockFinished = true;
             return false;
         }
@@ -316,9 +313,9 @@ void BlockAssembler::AddToBlock(CTxMemPool::txiter iter)
         CAmount dummy{0};
         mempool.ApplyDeltas(iter->GetTx().GetHash(), dPriority, dummy);
         LogPrintf("priority %.1f fee %s txid %s\n",
-                  dPriority,
-                  CFeeRate(iter->GetModifiedFee(), iter->GetTxSize()).ToString(),
-                  iter->GetTx().GetHash().ToString());
+            dPriority,
+            CFeeRate(iter->GetModifiedFee(), iter->GetTxSize()).ToString(),
+            iter->GetTx().GetHash().ToString());
     }
 }
 
@@ -439,7 +436,7 @@ void BlockAssembler::addPriorityTxs()
             for (CTxMemPool::txiter child : mempool.GetMemPoolChildren(iter)) {
                 waitPriIter wpiter = waitPriMap.find(child);
                 if (wpiter != waitPriMap.end()) {
-                    vecPriority.emplace_back(TxCoinAgePriority(wpiter->second,child));
+                    vecPriority.emplace_back(TxCoinAgePriority(wpiter->second, child));
                     std::push_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
                     waitPriMap.erase(wpiter);
                 }
@@ -461,9 +458,9 @@ uint256 CalculateSaplingTreeRoot(CBlock* pblock, int nHeight, const CChainParams
         assert(pcoinsTip->GetSaplingAnchorAt(pcoinsTip->GetBestAnchor(), sapling_tree));
 
         // Update the Sapling commitment tree.
-        for (const auto &tx : pblock->vtx) {
+        for (const auto& tx : pblock->vtx) {
             if (tx->IsShieldedTx()) {
-                for (const OutputDescription &odesc : tx->sapData->vShieldedOutput) {
+                for (const OutputDescription& odesc : tx->sapData->vShieldedOutput) {
                     sapling_tree.append(odesc.cmu);
                 }
             }
@@ -494,17 +491,14 @@ void IncrementExtraNonce(std::shared_ptr<CBlock>& pblock, const CBlockIndex* pin
 int32_t ComputeBlockVersion(const Consensus::Params& consensus, int nHeight)
 {
     if (NetworkUpgradeActive(nHeight, consensus, Consensus::UPGRADE_V5_0)) {
-        return CBlockHeader::CURRENT_VERSION;       // v10 (since 5.1.99)
+        return CBlockHeader::CURRENT_VERSION; // v10 (since 5.1.99)
     } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_V4_0)) {
         return 7;
     } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_V3_4)) {
         return 6;
     } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BIP65)) {
         return 5;
-    } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZC)) {
-        return 4;
     } else {
         return 3;
     }
 }
-

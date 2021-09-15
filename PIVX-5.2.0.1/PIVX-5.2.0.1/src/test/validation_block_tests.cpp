@@ -10,12 +10,13 @@
 #include "consensus/validation.h"
 #include "pow.h"
 #include "random.h"
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 #include "validation.h"
 #include "validationinterface.h"
 
 struct RegtestingSetup : public TestingSetup {
-    RegtestingSetup() : TestingSetup() {
+    RegtestingSetup() : TestingSetup()
+    {
         SelectParams(CBaseChainParams::REGTEST);
     }
 };
@@ -40,7 +41,7 @@ struct TestSubscriber : public CValidationInterface {
         m_expected_tip = block->GetHash();
     }
 
-    void BlockDisconnected(const std::shared_ptr<const CBlock> &block, const uint256& blockHash, int nBlockHeight, int64_t blockTime)
+    void BlockDisconnected(const std::shared_ptr<const CBlock>& block, const uint256& blockHash, int nBlockHeight, int64_t blockTime)
     {
         BOOST_CHECK_EQUAL(m_expected_tip, block->GetHash());
 
@@ -101,7 +102,7 @@ const std::shared_ptr<const CBlock> BadBlock(const uint256& prev_hash)
     return ret;
 }
 
-void BuildChain(const uint256& root, int height, const unsigned int invalid_rate, const unsigned int branch_rate, const unsigned int max_size, std::vector<std::shared_ptr<const CBlock>>& blocks)
+void BuildChain(const uint256& root, int height, const unsigned int invalid_rate, const unsigned int branch_rate, const unsigned int max_size, std::vector<std::shared_ptr<const CBlock> >& blocks)
 {
     if (height <= 0 || blocks.size() >= max_size) return;
 
@@ -123,7 +124,7 @@ void BuildChain(const uint256& root, int height, const unsigned int invalid_rate
 BOOST_AUTO_TEST_CASE(processnewblock_signals_ordering)
 {
     // build a large-ish chain that's likely to have some forks
-    std::vector<std::shared_ptr<const CBlock>> blocks;
+    std::vector<std::shared_ptr<const CBlock> > blocks;
     while (blocks.size() < 50) {
         blocks.clear();
         BuildChain(Params().GenesisBlock().GetHash(), 100, 15, 10, 500, blocks);
@@ -159,7 +160,7 @@ BOOST_AUTO_TEST_CASE(processnewblock_signals_ordering)
                     if (state.GetRejectReason() == "duplicate" ||
                         state.GetRejectReason() == "prevblk-not-found" ||
                         state.GetRejectReason() == "bad-prevblk") continue;
-                    BOOST_ASSERT_MSG(processed,  ("Error: " + state.GetRejectReason()).c_str());
+                    BOOST_ASSERT_MSG(processed, ("Error: " + state.GetRejectReason()).c_str());
                 }
             }
         });

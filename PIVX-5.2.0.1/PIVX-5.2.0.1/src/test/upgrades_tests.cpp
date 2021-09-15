@@ -1,17 +1,17 @@
 // Copyright (c) 2017 The Zcash Core developers
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "chainparams.h"
 #include "consensus/upgrades.h"
 #include "optional.h"
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include <boost/test/unit_test.hpp>
 
-struct UpgradesTest : public TestingSetup
-{
+struct UpgradesTest : public TestingSetup {
     int DefaultActivation[Consensus::MAX_NETWORK_UPGRADES];
     UpgradesTest()
     {
@@ -40,36 +40,36 @@ BOOST_AUTO_TEST_CASE(networkUpgradeStateTest)
 
     // Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT
     BOOST_CHECK_EQUAL(
-            NetworkUpgradeState(0, params, Consensus::UPGRADE_TESTDUMMY),
-            UPGRADE_DISABLED);
+        NetworkUpgradeState(0, params, Consensus::UPGRADE_TESTDUMMY),
+        UPGRADE_DISABLED);
     BOOST_CHECK_EQUAL(
-            NetworkUpgradeState(1000000, params, Consensus::UPGRADE_TESTDUMMY),
-            UPGRADE_DISABLED);
+        NetworkUpgradeState(1000000, params, Consensus::UPGRADE_TESTDUMMY),
+        UPGRADE_DISABLED);
 
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_TESTDUMMY, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
 
     BOOST_CHECK_EQUAL(
-            NetworkUpgradeState(0, params, Consensus::UPGRADE_TESTDUMMY),
-            UPGRADE_ACTIVE);
+        NetworkUpgradeState(0, params, Consensus::UPGRADE_TESTDUMMY),
+        UPGRADE_ACTIVE);
     BOOST_CHECK_EQUAL(
-            NetworkUpgradeState(1000000, params, Consensus::UPGRADE_TESTDUMMY),
-            UPGRADE_ACTIVE);
+        NetworkUpgradeState(1000000, params, Consensus::UPGRADE_TESTDUMMY),
+        UPGRADE_ACTIVE);
 
     int nActivationHeight = 100;
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_TESTDUMMY, nActivationHeight);
 
     BOOST_CHECK_EQUAL(
-            NetworkUpgradeState(0, params, Consensus::UPGRADE_TESTDUMMY),
-            UPGRADE_PENDING);
+        NetworkUpgradeState(0, params, Consensus::UPGRADE_TESTDUMMY),
+        UPGRADE_PENDING);
     BOOST_CHECK_EQUAL(
-            NetworkUpgradeState(nActivationHeight - 1, params, Consensus::UPGRADE_TESTDUMMY),
-            UPGRADE_PENDING);
+        NetworkUpgradeState(nActivationHeight - 1, params, Consensus::UPGRADE_TESTDUMMY),
+        UPGRADE_PENDING);
     BOOST_CHECK_EQUAL(
-            NetworkUpgradeState(nActivationHeight, params, Consensus::UPGRADE_TESTDUMMY),
-            UPGRADE_ACTIVE);
+        NetworkUpgradeState(nActivationHeight, params, Consensus::UPGRADE_TESTDUMMY),
+        UPGRADE_ACTIVE);
     BOOST_CHECK_EQUAL(
-            NetworkUpgradeState(1000000, params, Consensus::UPGRADE_TESTDUMMY),
-            UPGRADE_ACTIVE);
+        NetworkUpgradeState(1000000, params, Consensus::UPGRADE_TESTDUMMY),
+        UPGRADE_ACTIVE);
 }
 
 BOOST_AUTO_TEST_CASE(IsActivationHeightTest)

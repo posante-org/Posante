@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
-# Copyright (c) 20202 The PIVX developers
+# Copyright (c) 2020 The PIVX developers
+# Copyright (c) 2021 The Posante developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-from test_framework.test_framework import PivxTestFramework
+from test_framework.test_framework import PosanteTestFramework
 from test_framework.util import *
 
-class SaplingWalletPersistenceTest(PivxTestFramework):
+class SaplingWalletPersistenceTest(PosanteTestFramework):
 
     def set_test_params(self):
         self.num_nodes = 1

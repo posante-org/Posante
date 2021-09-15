@@ -1,10 +1,11 @@
 // Copyright (c) 2014 The Bitcoin Core developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "test/test_pivx.h"
+#include "test/test_posante.h"
 
 #include "blocksignature.h"
 #include "net.h"
@@ -16,7 +17,7 @@
 
 BOOST_FIXTURE_TEST_SUITE(main_tests, TestingSetup)
 
-enum BlockSignatureType{
+enum BlockSignatureType {
     P2PK,
     P2PKH,
     P2CS
@@ -24,11 +25,11 @@ enum BlockSignatureType{
 
 CScript GetScriptForType(CPubKey pubKey, BlockSignatureType type)
 {
-    switch(type){
-        case P2PK:
-            return CScript() << pubKey << OP_CHECKSIG;
-        default:
-            return GetScriptForDestination(pubKey.GetID());
+    switch (type) {
+    case P2PK:
+        return CScript() << pubKey << OP_CHECKSIG;
+    default:
+        return GetScriptForDestination(pubKey.GetID());
     }
 }
 
@@ -107,7 +108,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
 {
     CAmount nSum = 0;
     for (int nHeight = 0; nHeight < 1; nHeight += 1) {
-        /* premine in block 1 (60,001 PIV) */
+        /* premine in block 1 (60,001 POSA) */
         CAmount nSubsidy = GetBlockValue(nHeight + 1);
         BOOST_CHECK(nSubsidy <= 60001 * COIN);
         nSum += nSubsidy;

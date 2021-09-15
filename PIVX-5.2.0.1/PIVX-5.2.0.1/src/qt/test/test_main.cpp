@@ -1,15 +1,16 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
-#include "util.h"
 #include "uritests.h"
+#include "util.h"
 
 #ifdef ENABLE_WALLET
 #include "paymentservertests.h"
@@ -38,7 +39,7 @@ Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin);
 extern void noui_connect();
 
 // This is all you need to run all the tests
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     SetupEnvironment();
     bool fInvalid = false;
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
     // Don't remove this, it's needed to access
     // QCoreApplication:: in the tests
     QCoreApplication app(argc, argv);
-    app.setApplicationName("Pivx-Qt-test");
+    app.setApplicationName("Posante-Qt-test");
 
     SSL_library_init();
 

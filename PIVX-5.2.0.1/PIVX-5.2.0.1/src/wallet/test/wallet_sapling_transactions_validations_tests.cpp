@@ -1,4 +1,5 @@
 // Copyright (c) 2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -7,8 +8,8 @@
 #include "blockassembler.h"
 #include "consensus/merkle.h"
 #include "primitives/block.h"
-#include "sapling/transaction_builder.h"
 #include "sapling/sapling_operation.h"
+#include "sapling/transaction_builder.h"
 #include "wallet/wallet.h"
 
 #include <boost/test/unit_test.hpp>
@@ -39,22 +40,22 @@ void generateBlock(const CScript& scriptPubKey, int expectedBlockHeight)
 }
 
 SaplingOperation createOperationAndBuildTx(std::vector<SendManyRecipient> recipients,
-                                           int nextBlockHeight,
-                                           bool selectTransparentCoins)
+    int nextBlockHeight,
+    bool selectTransparentCoins)
 {
     // Create the operation
     TransactionBuilder txBuilder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
     SaplingOperation operation(txBuilder);
     auto operationResult = operation.setRecipients(recipients)
-            ->setSelectTransparentCoins(selectTransparentCoins)
-            ->setSelectShieldedCoins(!selectTransparentCoins)
-            ->build();
+                               ->setSelectTransparentCoins(selectTransparentCoins)
+                               ->setSelectShieldedCoins(!selectTransparentCoins)
+                               ->build();
     BOOST_ASSERT_MSG(operationResult, operationResult.getError().c_str());
 
     CValidationState state;
     BOOST_ASSERT_MSG(
-            CheckTransaction(operation.getFinalTx(), true, state, true, false, true),
-            "Invalid Sapling transaction");
+        CheckTransaction(operation.getFinalTx(), true, state, true, false, true),
+        "Invalid Sapling transaction");
     return operation;
 }
 
@@ -76,7 +77,7 @@ BOOST_AUTO_TEST_CASE(test_in_block_and_mempool_notes_double_spend)
     const CScript& scriptPubKey = GetScriptForDestination(coinbaseDest);
     int nGenerateBlocks = 110;
     for (int i = 0; i < nGenerateBlocks; ++i) {
-        generateBlock(scriptPubKey, (int) i);
+        generateBlock(scriptPubKey, (int)i);
     }
 
     // Verify that we are at block 110
@@ -86,7 +87,7 @@ BOOST_AUTO_TEST_CASE(test_in_block_and_mempool_notes_double_spend)
     BOOST_CHECK_EQUAL(pwalletMain->GetAvailableBalance(), CAmount(250 * COIN * 10)); // 10 blocks available
     BOOST_CHECK_EQUAL(pwalletMain->GetImmatureBalance(), CAmount(250 * COIN * 100)); // 100 blocks immature
 
-    // Now that we have the chain, let's shield 100 PIVs
+    // Now that we have the chain, let's shield 100 POSAs
     // single recipient
     std::vector<SendManyRecipient> recipients;
     libzcash::SaplingPaymentAddress pa = pwalletMain->GenerateNewSaplingZKey("sapling1");
@@ -99,9 +100,11 @@ BOOST_AUTO_TEST_CASE(test_in_block_and_mempool_notes_double_spend)
     BOOST_ASSERT_MSG(operation.send(retHash), "error committing and broadcasting the transaction");
 
     // Generate a five blocks to fully confirm the tx and test balance
-    for (int i = 0; i < 5; ++i) { generateBlock(scriptPubKey, WITH_LOCK(cs_main, return chainActive.Tip()->nHeight + 1)); }
-    BOOST_CHECK_EQUAL(pwalletMain->GetAvailableShieldedBalance(), CAmount(100 * COIN)); // 100 shield PIVs
-    BOOST_CHECK_EQUAL(pwalletMain->GetUnconfirmedShieldedBalance(), CAmount(0)); // 0 shield PIVs
+    for (int i = 0; i < 5; ++i) {
+        generateBlock(scriptPubKey, WITH_LOCK(cs_main, return chainActive.Tip()->nHeight + 1));
+    }
+    BOOST_CHECK_EQUAL(pwalletMain->GetAvailableShieldedBalance(), CAmount(100 * COIN)); // 100 shield POSAs
+    BOOST_CHECK_EQUAL(pwalletMain->GetUnconfirmedShieldedBalance(), CAmount(0));        // 0 shield POSAs
 
     // ##############################################
     // Context set!

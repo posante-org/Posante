@@ -5,6 +5,7 @@
 // Copyright (c) 2013-2014 The NovaCoin Developers
 // Copyright (c) 2014-2018 The BlackCoin Developers
 // Copyright (c) 2015-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -12,8 +13,8 @@
 
 #include "amount.h"
 #include "blockassembler.h"
-#include "consensus/tx_verify.h" // needed in case of no ENABLE_WALLET
 #include "consensus/params.h"
+#include "consensus/tx_verify.h" // needed in case of no ENABLE_WALLET
 #include "masternode-sync.h"
 #include "net.h"
 #include "policy/feerate.h"
@@ -25,9 +26,8 @@
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
-#include "validationinterface.h"
-#include "invalid.h"
 #include "policy/policy.h"
+#include "validationinterface.h"
 
 #include <boost/thread.hpp>
 
@@ -69,7 +69,7 @@ bool ProcessBlockFound(const std::shared_ptr<const CBlock>& pblock, CWallet& wal
     {
         WAIT_LOCK(g_best_block_mutex, lock);
         if (pblock->hashPrevBlock != g_best_block)
-            return error("PIVXMiner : generated block is stale");
+            return error("PosanteMiner : generated block is stale");
     }
 
     // Remove key from key pool
@@ -79,11 +79,10 @@ bool ProcessBlockFound(const std::shared_ptr<const CBlock>& pblock, CWallet& wal
     // Process this block the same as if we had received it from another node
     CValidationState state;
     if (!ProcessNewBlock(state, nullptr, pblock, nullptr)) {
-        return error("PIVXMiner : ProcessNewBlock, block not accepted");
+        return error("PosanteMiner : ProcessNewBlock, block not accepted");
     }
 
-    g_connman->ForEachNode([&pblock](CNode* node)
-    {
+    g_connman->ForEachNode([&pblock](CNode* node) {
         node->PushInventory(CInv(MSG_BLOCK, pblock->GetHash()));
     });
 
@@ -109,9 +108,9 @@ void CheckForCoins(CWallet* pwallet, std::vector<CStakeableOutput>* availableCoi
 
 void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
 {
-    LogPrintf("PIVXMiner started\n");
+    LogPrintf("PosanteMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
-    util::ThreadRename("pivx-miner");
+    util::ThreadRename("posante-miner");
     const Consensus::Params& consensus = Params().GetConsensus();
     const int64_t nSpacingMillis = consensus.nTargetSpacing * 1000;
 
@@ -128,21 +127,20 @@ void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
     while (fGenerateBitcoins || fProofOfStake) {
         CBlockIndex* pindexPrev = GetChainTip();
         if (!pindexPrev) {
-            MilliSleep(nSpacingMillis);       // sleep a block
+            MilliSleep(nSpacingMillis); // sleep a block
             continue;
         }
         if (fProofOfStake) {
             if (!consensus.NetworkUpgradeActive(pindexPrev->nHeight + 1, Consensus::UPGRADE_POS)) {
                 // The last PoW block hasn't even been mined yet.
-                MilliSleep(nSpacingMillis);       // sleep a block
+                MilliSleep(nSpacingMillis); // sleep a block
                 continue;
             }
 
             // update fStakeableCoins
             CheckForCoins(pwallet, &availableCoins);
 
-            while ((g_connman && g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0 && Params().MiningRequiresPeers())
-                    || pwallet->IsLocked() || !fStakeableCoins || masternodeSync.NotCompleted()) {
+            while ((g_connman && g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0 && Params().MiningRequiresPeers()) || pwallet->IsLocked() || !fStakeableCoins || masternodeSync.NotCompleted()) {
                 MilliSleep(5000);
                 // Do another check here to ensure fStakeableCoins is updated
                 if (!fStakeableCoins) CheckForCoins(pwallet, &availableCoins);
@@ -150,8 +148,8 @@ void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
 
             //search our map of hashed blocks, see if bestblock has been hashed yet
             if (pwallet->pStakerStatus &&
-                    pwallet->pStakerStatus->GetLastHash() == pindexPrev->GetBlockHash() &&
-                    pwallet->pStakerStatus->GetLastTime() >= GetCurrentTimeSlot()) {
+                pwallet->pStakerStatus->GetLastHash() == pindexPrev->GetBlockHash() &&
+                pwallet->pStakerStatus->GetLastTime() >= GetCurrentTimeSlot()) {
                 MilliSleep(2000);
                 continue;
             }
@@ -160,7 +158,7 @@ void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
             // Late PoW: run for a little while longer, just in case there is a rewind on the chain.
             LogPrintf("%s: Exiting PoW Mining Thread at height: %d\n", __func__, pindexPrev->nHeight);
             return;
-       }
+        }
 
         //
         // Create new block
@@ -168,8 +166,8 @@ void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
         unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
 
         std::unique_ptr<CBlockTemplate> pblocktemplate((fProofOfStake ?
-                                                        BlockAssembler(Params(), DEFAULT_PRINTPRIORITY).CreateNewBlock(CScript(), pwallet, true, &availableCoins) :
-                                                        CreateNewBlockWithKey(opReservekey.get_ptr(), pwallet)));
+                                                            BlockAssembler(Params(), DEFAULT_PRINTPRIORITY).CreateNewBlock(CScript(), pwallet, true, &availableCoins) :
+                                                            CreateNewBlockWithKey(opReservekey.get_ptr(), pwallet)));
         if (!pblocktemplate) continue;
         std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>(pblocktemplate->block);
 
@@ -188,7 +186,7 @@ void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
         // POW - miner main
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-        LogPrintf("Running PIVXMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
+        LogPrintf("Running PosanteMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
             ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
         //
@@ -249,11 +247,10 @@ void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
 
             // Check for stop or if block needs to be rebuilt
             boost::this_thread::interruption_point();
-            if (    (g_connman && g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0 && Params().MiningRequiresPeers()) || // Regtest mode doesn't require peers
-                    (pblock->nNonce >= 0xffff0000) ||
-                    (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60) ||
-                    (pindexPrev != chainActive.Tip())
-                ) break;
+            if ((g_connman && g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0 && Params().MiningRequiresPeers()) || // Regtest mode doesn't require peers
+                (pblock->nNonce >= 0xffff0000) ||
+                (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60) ||
+                (pindexPrev != chainActive.Tip())) break;
 
             // Update nTime every few seconds
             UpdateTime(pblock.get(), consensus, pindexPrev);
@@ -261,7 +258,6 @@ void BitcoinMiner(CWallet* pwallet, bool fProofOfStake)
                 // Changing pblock->nTime can change work required on testnet:
                 hashTarget.SetCompact(pblock->nBits);
             }
-
         }
     }
 }
@@ -274,12 +270,12 @@ void static ThreadBitcoinMiner(void* parg)
         BitcoinMiner(pwallet, false);
         boost::this_thread::interruption_point();
     } catch (const std::exception& e) {
-        LogPrintf("PIVXMiner exception");
+        LogPrintf("PosanteMiner exception");
     } catch (...) {
-        LogPrintf("PIVXMiner exception");
+        LogPrintf("PosanteMiner exception");
     }
 
-    LogPrintf("PIVXMiner exiting\n");
+    LogPrintf("PosanteMiner exiting\n");
 }
 
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)

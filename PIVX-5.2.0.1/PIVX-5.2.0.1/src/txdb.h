@@ -1,6 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2016-2020 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,8 +11,6 @@
 #include "coins.h"
 #include "chain.h"
 #include "dbwrapper.h"
-#include "libzerocoin/Coin.h"
-#include "libzerocoin/CoinSpend.h"
 
 #include <map>
 #include <string>
@@ -143,39 +142,6 @@ public:
     bool ReadInt(const std::string& name, int& nValue);
     bool LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)> insertBlockIndex);
     bool ReadLegacyBlockIndex(const uint256& blockHash, CLegacyBlockIndex& biRet);
-};
-
-/** Zerocoin database (zerocoin/) */
-class CZerocoinDB : public CDBWrapper
-{
-public:
-    CZerocoinDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
-
-private:
-    CZerocoinDB(const CZerocoinDB&);
-    void operator=(const CZerocoinDB&);
-
-public:
-    /** Write zPIV mints to the zerocoinDB in a batch */
-    bool WriteCoinMintBatch(const std::vector<std::pair<libzerocoin::PublicCoin, uint256> >& mintInfo);
-    bool ReadCoinMint(const CBigNum& bnPubcoin, uint256& txHash);
-    bool ReadCoinMint(const uint256& hashPubcoin, uint256& hashTx);
-    /** Write zPIV spends to the zerocoinDB in a batch */
-    bool WriteCoinSpendBatch(const std::vector<std::pair<libzerocoin::CoinSpend, uint256> >& spendInfo);
-    bool ReadCoinSpend(const CBigNum& bnSerial, uint256& txHash);
-    bool ReadCoinSpend(const uint256& hashSerial, uint256 &txHash);
-    bool EraseCoinMint(const CBigNum& bnPubcoin);
-    bool EraseCoinSpend(const CBigNum& bnSerial);
-    bool WipeCoins(std::string strType);
-
-    /** Map supply [denom] --> supply     */
-    bool WriteZCSupply(const std::map<libzerocoin::CoinDenomination, int64_t>& mapZCS);
-    bool ReadZCSupply(std::map<libzerocoin::CoinDenomination, int64_t>& mapZCS) const;
-    /** Accumulators (only for zPoS IBD): [checksum, denom] --> block height **/
-    bool WriteAccChecksum(const uint32_t& nChecksum, const libzerocoin::CoinDenomination denom, const int nHeight);
-    bool ReadAccChecksum(const uint32_t& nChecksum, const libzerocoin::CoinDenomination denom, int& nHeightRet);
-    bool EraseAccChecksum(const uint32_t& nChecksum, const libzerocoin::CoinDenomination denom);
-    bool WipeAccChecksums();
 };
 
 #endif // BITCOIN_TXDB_H

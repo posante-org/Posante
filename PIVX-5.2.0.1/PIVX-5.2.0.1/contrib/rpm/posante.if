@@ -1,0 +1,157 @@
+
+## <summary>policy for posante</summary>
+
+
+########################################
+## <summary>
+##	Transition to posante.
+## </summary>
+## <param name="domain">
+## <summary>
+##	Domain allowed to transition.
+## </summary>
+## </param>
+#
+interface(`posante_domtrans',`
+	gen_require(`
+		type posante_t, posante_exec_t;
+	')
+
+	corecmd_search_bin($1)
+	domtrans_pattern($1, posante_exec_t, posante_t)
+')
+
+
+########################################
+## <summary>
+##	Execute posante server in the posante domain.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`posante_initrc_domtrans',`
+	gen_require(`
+		type posante_initrc_exec_t;
+	')
+
+	init_labeled_script_domtrans($1, posante_initrc_exec_t)
+')
+
+
+########################################
+## <summary>
+##	Search posante lib directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`posante_search_lib',`
+	gen_require(`
+		type posante_var_lib_t;
+	')
+
+	allow $1 posante_var_lib_t:dir search_dir_perms;
+	files_search_var_lib($1)
+')
+
+########################################
+## <summary>
+##	Read posante lib files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`posante_read_lib_files',`
+	gen_require(`
+		type posante_var_lib_t;
+	')
+
+	files_search_var_lib($1)
+	read_files_pattern($1, posante_var_lib_t, posante_var_lib_t)
+')
+
+########################################
+## <summary>
+##	Manage posante lib files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`posante_manage_lib_files',`
+	gen_require(`
+		type posante_var_lib_t;
+	')
+
+	files_search_var_lib($1)
+	manage_files_pattern($1, posante_var_lib_t, posante_var_lib_t)
+')
+
+########################################
+## <summary>
+##	Manage posante lib directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`posante_manage_lib_dirs',`
+	gen_require(`
+		type posante_var_lib_t;
+	')
+
+	files_search_var_lib($1)
+	manage_dirs_pattern($1, posante_var_lib_t, posante_var_lib_t)
+')
+
+
+########################################
+## <summary>
+##	All of the rules required to administrate
+##	a posante environment
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <param name="role">
+##	<summary>
+##	Role allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`posante_admin',`
+	gen_require(`
+		type posante_t;
+		type posante_initrc_exec_t;
+		type posante_var_lib_t;
+	')
+
+	allow $1 posante_t:process { ptrace signal_perms };
+	ps_process_pattern($1, posante_t)
+
+	posante_initrc_domtrans($1)
+	domain_system_change_exemption($1)
+	role_transition $2 posante_initrc_exec_t system_r;
+	allow $2 system_r;
+
+	files_search_var_lib($1)
+	admin_pattern($1, posante_var_lib_t)
+
+')
+

@@ -1,18 +1,19 @@
 // Copyright (c) 2012-2013 The Bitcoin Core developers
 // Copyright (c) 2017-2019 The PIVX developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "random.h"
 #include "scheduler.h"
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "config/posante-config.h"
 #endif
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
-#include <boost/thread.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/thread.hpp>
 
 BOOST_AUTO_TEST_SUITE(scheduler_tests)
 
@@ -49,7 +50,7 @@ BOOST_AUTO_TEST_CASE(manythreads)
     CScheduler microTasks;
 
     boost::mutex counterMutex[10];
-    int counter[10] = { 0 };
+    int counter[10] = {0};
     boost::random::mt19937 rng(42);
     boost::random::uniform_int_distribution<> zeroToNine(0, 9);
     boost::random::uniform_int_distribution<> randomMsec(-11, 1000);
@@ -66,8 +67,8 @@ BOOST_AUTO_TEST_CASE(manythreads)
         boost::chrono::system_clock::time_point tReschedule = now + boost::chrono::microseconds(500 + randomMsec(rng));
         int whichCounter = zeroToNine(rng);
         CScheduler::Function f = std::bind(&microTask, std::ref(microTasks),
-                                             std::ref(counterMutex[whichCounter]), std::ref(counter[whichCounter]),
-                                             randomDelta(rng), tReschedule);
+            std::ref(counterMutex[whichCounter]), std::ref(counter[whichCounter]),
+            randomDelta(rng), tReschedule);
         microTasks.schedule(f, t);
     }
     nTasks = microTasks.getQueueInfo(first, last);
@@ -91,8 +92,8 @@ BOOST_AUTO_TEST_CASE(manythreads)
         boost::chrono::system_clock::time_point tReschedule = now + boost::chrono::microseconds(500 + randomMsec(rng));
         int whichCounter = zeroToNine(rng);
         CScheduler::Function f = std::bind(&microTask, std::ref(microTasks),
-                                             std::ref(counterMutex[whichCounter]), std::ref(counter[whichCounter]),
-                                             randomDelta(rng), tReschedule);
+            std::ref(counterMutex[whichCounter]), std::ref(counter[whichCounter]),
+            randomDelta(rng), tReschedule);
         microTasks.schedule(f, t);
     }
 

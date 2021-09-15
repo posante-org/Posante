@@ -1,10 +1,11 @@
     // Copyright (c) 2017 The Dash Core developers
 // Copyright (c) 2020 The PIVX Core developers
+// Copyright (c) 2021 The Posante developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef PIVX_SPECIALTX_H
-#define PIVX_SPECIALTX_H
+#ifndef Posante_SPECIALTX_H
+#define Posante_SPECIALTX_H
 
 #include "streams.h"
 #include "version.h"
@@ -27,4 +28,4 @@ bool CheckSpecialTx(const CTransaction& tx, CValidationState& state, bool fIsSap
 bool ProcessSpecialTxsInBlock(const CBlock& block, const CBlockIndex* pindexPrev, CValidationState& state);
 bool UndoSpecialTxsInBlock(const CBlock& block, const CBlockIndex* pindexPrev);
 
-#endif //PIVX_SAPLING_VALIDATION_H
+#endif //Posante_SAPLING_VALIDATION_H
