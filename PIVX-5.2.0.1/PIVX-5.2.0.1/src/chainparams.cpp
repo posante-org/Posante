@@ -107,10 +107,13 @@ public:
     {
         strNetworkID = "main";
 
-        genesis = CreateGenesisBlock(1630045800, 773765, 0x1e0ffff0, 1, 0);
+        // genesis = CreateGenesisBlock(1630045800, 773765, 0x1e0ffff0, 1, 0);
+        genesis = CreateGenesisBlock(1633148831, 1768160, 0x1e0ffff0, 1, 0);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x0000032e39f6ec3696600e2854661c7d787957853441c5c20629bad7da5986ed"));
-        assert(genesis.hashMerkleRoot == uint256S("0x089a0ff5e10f08b269bc75c62f12b610e2e600171a596d62ae23550d9c952992"));
+        // assert(consensus.hashGenesisBlock == uint256S("0x0000032e39f6ec3696600e2854661c7d787957853441c5c20629bad7da5986ed"));
+        assert(consensus.hashGenesisBlock == uint256S("00000421eac897162557e3841832034dd53bacf9dde6265d32a40c584b7c239f"));
+        // assert(genesis.hashMerkleRoot == uint256S("0x089a0ff5e10f08b269bc75c62f12b610e2e600171a596d62ae23550d9c952992"));
+        assert(genesis.hashMerkleRoot == uint256S("4bb93b08077a4b7ba66dc68605446bb92a756c5a28a85e99145db317119df9d7"));
 
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.powLimit = ~UINT256_ZERO >> 20; // Posante starting difficulty is 1 / 2^12
